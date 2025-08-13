@@ -202,3 +202,15 @@
 /obj/machinery/firealarm/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, buildstage)
+
+/obj/machinery/vending/get_save_vars()
+	. = ..()
+	. += NAMEOF(src, credits_contained)
+	. += NAMEOF(src, all_products_free)
+	on_deconstruction()
+
+/obj/machinery/vending/custom/get_save_vars()
+	var/temp = linked_account
+	linked_account = null
+	. = ..()
+	linked_account = temp

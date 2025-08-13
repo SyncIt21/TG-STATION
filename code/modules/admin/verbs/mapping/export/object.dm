@@ -73,8 +73,8 @@
 		. += NAMEOF(src, internal_cell)
 
 	//stored id slot
-	if(!QDELETED(computer_id_slot))
-		. += NAMEOF(src, computer_id_slot)
+	if(!QDELETED(stored_id))
+		. += NAMEOF(src, stored_id)
 
 	//store all programs that don't load up on default
 	var/list/stored_files = list("stored_files" = list())
@@ -208,5 +208,19 @@
 /obj/item/boulder/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, durability)
+
+/obj/item/vending_refill/get_save_vars()
+	. = ..()
+	if(products)
+		. += NAMEOF(src, products)
+	if(contraband)
+		. += NAMEOF(src, contraband)
+	if(premium)
+		. += NAMEOF(src, premium)
+
+/obj/item/vending_refill/custom/get_save_vars()
+	. = ..()
+	if(contents.len)
+		. += NAMEOF(src, contents)
 
 #undef REF_ATTRIBUTE

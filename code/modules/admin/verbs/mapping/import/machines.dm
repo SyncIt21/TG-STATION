@@ -285,3 +285,17 @@
 		return
 
 	..()
+
+/obj/machinery/vending/restore_saved_value(attribute, resolved_value)
+	if(attribute == "contents")
+		..()
+
+		for(var/obj/item/thing as anything in contents)
+			for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
+				if(thing.type == record.product_path)
+					LAZYADD(record.returned_products, thing)
+					break
+
+		return
+
+	..()
