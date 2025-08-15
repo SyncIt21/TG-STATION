@@ -40,10 +40,16 @@
 	..()
 
 /obj/machinery/atmospherics/components/binary/crystallizer/restore_saved_value(attribute, resolved_value)
+	if(attribute == "internal")
+		internal.merge(SSair.parse_gas_string(replacetext(resolved_value, "%", "=")))
+
+		return
+
 	if(attribute == "recipe")
 		selected_recipe = GLOB.gas_recipe_meta[resolved_value]
 		update_parents() //prevent the machine from stopping because of the recipe change and the pipenet not updating
 		moles_calculations()
+
 		return
 
 	..()

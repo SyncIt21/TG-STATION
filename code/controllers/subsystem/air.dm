@@ -771,6 +771,8 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 /// Takes a gas string, returns the matching mutable gas_mixture
 /datum/controller/subsystem/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
+	RETURN_TYPE(/datum/gas_mixture)
+
 	var/datum/gas_mixture/cached = strings_to_mix["[gas_string]-[gastype]"]
 
 	if(cached)

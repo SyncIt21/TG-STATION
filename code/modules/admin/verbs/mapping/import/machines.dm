@@ -42,7 +42,7 @@
 			thing.forceMove(src)
 
 			for(var/part_type in req_components)
-				if(istype(thing, part_type))
+				if(thing.type == part_type)
 					//append the part
 					component_parts += thing
 
@@ -288,12 +288,15 @@
 
 /obj/machinery/vending/restore_saved_value(attribute, resolved_value)
 	if(attribute == "contents")
+		var/obj/item/circuitboard/machine/vendor/board = locate() in resolved_value
+		board.set_type(type)
 		..()
 
-		for(var/obj/item/thing as anything in contents)
-			for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
+		for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
+			for(var/obj/item/thing as anything in resolved_value)
 				if(thing.type == record.product_path)
 					LAZYADD(record.returned_products, thing)
+					record.amount += 1
 					break
 
 		return

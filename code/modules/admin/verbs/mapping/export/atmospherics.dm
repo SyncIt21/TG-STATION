@@ -61,6 +61,7 @@
 
 /obj/machinery/atmospherics/components/binary/crystallizer/get_save_vars()
 	. = ..()
+	. += list(list("internal" = replacetext(internal.to_string(), "=", "%")))
 	if(selected_recipe)
 		. += list(list("recipe" = selected_recipe.id))
 	. += NAMEOF(src, gas_input)
