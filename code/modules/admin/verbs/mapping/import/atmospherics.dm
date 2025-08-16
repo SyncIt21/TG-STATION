@@ -1,3 +1,32 @@
+/obj/machinery/air_sensor/restore_saved_value(attribute, resolved_value)
+	if(attribute == "inlet_coords")
+		var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
+
+		inlet_id = inlet.id_tag
+
+		return
+
+	if(attribute == "outlet_coords")
+		var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
+
+		outlet_id = outlet.id_tag
+
+		return
+
+	..()
+
+/obj/machinery/computer/atmos_control/restore_saved_value(attribute, resolved_value)
+	if(attribute == "sensors")
+		connected_sensors.Cut()
+		for(var/chamber_identifier in resolved_value)
+			var/obj/machinery/air_sensor/sensor = locate() in TURF_FROM_COORDS_LIST(resolved_value[chamber_identifier])
+			if(!QDELETED(sensor))
+				connected_sensors[chamber_identifier] = sensor.id_tag
+
+		return
+
+	..()
+
 /obj/machinery/portable_atmospherics/restore_saved_value(attribute, resolved_value)
 	if(attribute == "anchored")
 		var/obj/machinery/atmospherics/components/unary/portables_connector/possible_port = locate(/obj/machinery/atmospherics/components/unary/portables_connector) in loc

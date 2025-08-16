@@ -19,17 +19,13 @@
 	var/obj/machinery/airalarm/connected_airalarm
 
 /obj/machinery/air_sensor/Initialize(mapload)
-	if(isnull(id_tag))
-		id_tag = assign_random_name()
+	id_tag = assign_random_name()
 
 	//this global list of air sensors is available to all station monitering consoles round start and to new consoles made during the round
 	if(mapload)
-		if(!GLOB.map_loaded_sensors[chamber_id])
-			GLOB.map_loaded_sensors[chamber_id] = id_tag
-		if(!inlet_id)
-			inlet_id = CHAMBER_INPUT_FROM_ID(chamber_id)
-		if(!outlet_id)
-			outlet_id = CHAMBER_OUTPUT_FROM_ID(chamber_id)
+		GLOB.map_loaded_sensors[chamber_id] = id_tag
+		inlet_id = CHAMBER_INPUT_FROM_ID(chamber_id)
+		outlet_id = CHAMBER_OUTPUT_FROM_ID(chamber_id)
 
 	var/static/list/multitool_tips = list(
 		TOOL_MULTITOOL = list(

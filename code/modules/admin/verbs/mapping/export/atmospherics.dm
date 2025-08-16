@@ -84,25 +84,31 @@
 	. += NAMEOF(src, internal_pressure_bound)
 	. += NAMEOF(src, fan_overclocked)
 
+/obj/machinery/air_sensor/get_save_vars()
+	. = ..()
+	. += NAMEOF(src, chamber_id)
+	. -= NAMEOF(src, contents)
+
+	var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = GLOB.objects_by_id_tag[inlet_id || ""]
+	if(istype(inlet) && !QDELETED(inlet))
+		var/turf/target_turf = get_turf(inlet)
+		. += list(list("inlet_coords" = list(target_turf.x, target_turf.y, target_turf.z)))
+
+	var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = GLOB.objects_by_id_tag[outlet_id || ""]
+	if(istype(outlet) && !QDELETED(outlet))
+		var/turf/target_turf = get_turf(outlet)
+		. += list(list("outlet_coords" = list(target_turf.x, target_turf.y, target_turf.z)))
+
 /obj/machinery/computer/atmos_control/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, atmos_chambers)
 	. += NAMEOF(src, was_multi_tooled)
 	if(was_multi_tooled)
-		. += NAMEOF(src, connected_sensors)
-
-/obj/machinery/air_sensor/get_save_vars()
-	. = ..()
-	. += NAMEOF(src, id_tag)
-	. += NAMEOF(src, chamber_id)
-
-	var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = GLOB.objects_by_id_tag[inlet_id || ""]
-	if(istype(inlet) && !QDELETED(inlet))
-		. += NAMEOF(src, inlet_id)
-
-	var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = GLOB.objects_by_id_tag[outlet_id || ""]
-	if(istype(outlet) && !QDELETED(outlet))
-		. += NAMEOF(src, outlet_id)
+		var/list/sensor_coords = list()
+		for(var/chamber_identifier in connected_sensors)
+			var/turf/sensor_turf = get_turf(GLOB.objects_by_id_tag[connected_sensors[chamber_identifier]])
+			sensor_coords[chamber_identifier] = list(sensor_turf.x, sensor_turf.y, sensor_turf.z)
+		. += list(list("sensors" = sensor_coords))
 
 /obj/machinery/atmospherics/components/binary/passive_gate/get_save_vars()
 	. = ..()
