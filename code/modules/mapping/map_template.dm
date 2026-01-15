@@ -90,6 +90,7 @@
 		return
 
 	SSatoms.InitializeAtoms(areas + turfs + movables, returns_created_atoms ? created_atoms : null)
+	SSworld_save.LoadAtoms()
 
 	for(var/turf/unlit as anything in turfs)
 		if(unlit.space_lit)
@@ -187,7 +188,6 @@
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
-	SSworld_save.LoadAtoms()
 
 	if(has_ceiling)
 		var/affected_turfs = get_affected_turfs(T, FALSE)

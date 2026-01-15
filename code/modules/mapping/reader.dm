@@ -1041,7 +1041,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		MAPLOADING_CHECK_TICK
 
 
-	var/atom/instance
 	if(atom_refs.len)
 		var/list/atom/turf_atoms = atom_refs[NULL_REF_ID]
 		for(var/instance, ref_attributes in turf_atoms)

@@ -43,7 +43,8 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 	if(istext(value))
 		//Prevent symbols from being because otherwise you can name something
 		// [";},/obj/item/gun/energy/laser/instakill{name="da epic gun] and spawn yourself an instakill gun.
-		HASHTAG_NEWLINES_AND_TABS(value, list("{"="", "}"="", "\""="", ","=""))
+		var/list/replacement_characters = list("{"="", "}"="", "\""="", ","="")
+		HASHTAG_NEWLINES_AND_TABS(value, replacement_characters)
 		return "[value]"
 	if(isnum(value) || ispath(value))
 		return "[value]"
