@@ -1,23 +1,21 @@
 /// Save objects types
 #define SAVE_OBJECTS (1 << 1)
-/// Save objects variables from obj.get_save_vars() and obj.get_custom_save_vars() if disabled, saves dir, pixel_x, pixel_y as default
+/// Save objects variables from obj.get_save_vars() if disabled, saves dir, pixel_x, pixel_y as default
 #define SAVE_OBJECTS_VARIABLES (1 << 2)
-/// Save objects custom properties from obj.on_object_saved()
-#define SAVE_OBJECTS_PROPERTIES (1 << 3)
 /// Save mobs types (excludes mob/living/carbon)
-#define SAVE_MOBS (1 << 4)
+#define SAVE_MOBS (1 << 3)
 /// Save turfs types, if disabled, this will save turfs as /turf/template_noop
-#define SAVE_TURFS (1 << 5)
+#define SAVE_TURFS (1 << 4)
 /// Save turfs atmospheric properties (gases, temperature, etc.)
-#define SAVE_TURFS_ATMOS (1 << 6)
+#define SAVE_TURFS_ATMOS (1 << 5)
 /// Save space turfs, if disabled, this will replace objects, mobs, and areas that are on space turfs with /template_noop
-#define SAVE_TURFS_SPACE (1 << 7)
+#define SAVE_TURFS_SPACE (1 << 6)
 /// Save areas types, if disabled, this will save areas as /area/template_noop
-#define SAVE_AREAS (1 << 8)
+#define SAVE_AREAS (1 << 7)
 /// Save areas types for default shuttles like arrivals, cargo, mining, whiteship, etc. (does not include custom shuttles), if disabled, uses /template_noop
-#define SAVE_AREAS_DEFAULT_SHUTTLES (1 << 9)
+#define SAVE_AREAS_DEFAULT_SHUTTLES (1 << 8)
 /// Save areas types for custom shuttles that players make, if disabled, uses /template_noop
-#define SAVE_AREAS_CUSTOM_SHUTTLES (1 << 10)
+#define SAVE_AREAS_CUSTOM_SHUTTLES (1 << 9)
 
 //Ignore turf if it contains
 #define SAVE_SHUTTLEAREA_DONTCARE 0
@@ -35,31 +33,6 @@
 			text = copytext(text, 1, index) + replacements[char] + copytext(text, index + length(char));\
 			index = findtext(text, char, index + length(char));\
 		};\
-	};
-
-/** Encodes a value into a TGM valid string.
- * not handled:
- * - pops: /obj{name="foo"}
- * - new(), newlist(), icon(), matrix(), sound()
-**/
-#define TGM_ENCODE(value)\
-	if(istext(value)) {\
-		var/list/replacement_characters = list("{"="", "}"="", "\""="", ","="");\
-		HASHTAG_NEWLINES_AND_TABS(value, replacement_characters);\
-		value = "\"[value]\"";\
-	} else if(isnum(value) || ispath(value)) {\
-		value = "[value]";\
-	} else if(islist(value)) {\
-		value = to_list_string(value);\
-	} else if(isnull(value)) {\
-		value = "null";\
-	} else if(isicon(value) || isfile(value)) {\
-		value = "'[value]'";\
-	} else {\
-		value = "[value]";\
-		var/list/replacement_characters = list("{"="", "}"="", "\""="", ","="");\
-		HASHTAG_NEWLINES_AND_TABS(value, replacement_characters);\
-		value = "\"[value]\"";\
 	};
 
 /// Generates a TGM string for an object's variables "{variables}"
@@ -129,3 +102,8 @@
 
 /// Check if mob limit is exceeded
 #define MOB_LIMIT_EXCEEDED (GLOB.TGM_mobs >= CONFIG_GET(number/persistent_max_mob_limit_per_turf))
+
+/// Special attribute which no regular atom should have in the map template
+#define REF_ATTRIBUTES "ref_attributes"
+/// Special attribute to recognize atoms that belong inside other atoms
+#define INTERNAL_ID "internal_id"

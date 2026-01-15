@@ -41,9 +41,6 @@
 		qdeleted = TRUE
 	else if(!(A.flags_1 & INITIALIZED_1))
 		BadInitializeCalls[the_type] |= BAD_INIT_DIDNT_INIT
-	else
-		if(arguments[1]) // mapload
-			world_save_loaders += A
 
 		SEND_SIGNAL(A, COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZE)
 		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_ATOM_AFTER_POST_INIT, A)
@@ -156,12 +153,6 @@
 
 	if(ispath(ai_controller))
 		ai_controller = new ai_controller(src)
-
-	if(save_container_parent_id)
-		GLOB.save_containers_parents[save_container_parent_id] = src
-
-	if(save_container_child_id)
-		GLOB.save_containers_children += src
 
 	setup_reskins()
 

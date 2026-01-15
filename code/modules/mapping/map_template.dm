@@ -187,6 +187,7 @@
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
+	SSworld_save.LoadAtoms()
 
 	if(has_ceiling)
 		var/affected_turfs = get_affected_turfs(T, FALSE)

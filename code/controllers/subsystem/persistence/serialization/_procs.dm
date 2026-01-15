@@ -1,28 +1,9 @@
 /atom
-	// These vars help insert objects inside containers by matching and linking the parent containers id to the children
-	// example:
-	// backpack with var/save_container_parent_id = "foo123"
-	// pen with var/save_container_child_id = "foo123"
-	// This will cause the pen to be inserted into the backpack during initialization
-
-	/// This is the parent id linked to the child object
-	/// Used to determine which parent container to insert the object into during map loading
-	var/save_container_child_id
-	/// This is the generated id of the parent object that holds children inside
-	/// Used to link children and parent objects together during map loading
-	var/save_container_parent_id
-
-/// A list of all parent containers storing objects inside (used via map save/load)
-GLOBAL_LIST_EMPTY(save_containers_parents)
-/// A list of all children that are stored inside parent containers (used via map save/load)
-GLOBAL_LIST_EMPTY(save_containers_children)
-
 /**
  * List of variables to include when it is serialized.
  *
  * Always use NAMEOF(src, varname) for the keys to ensure compile-time checking.
  * Do NOT return variable values or custom data in this proc.
- * To save calculated values or custom data, use either get_custom_save_vars() or on_object_saved()
  *
  * Returns: Array list of variable names to be serialized
  */
@@ -53,6 +34,11 @@ GLOBAL_LIST_EMPTY(save_containers_children)
 	. += NAMEOF(src, obj_flags)
 	return .
 
+/obj/item/get_custom_save_vars(save_flags)
+	. = ..()
+	if(contents.len && atom_storage)
+		.[NAMEOF(src, contents)] = contents
+
 /**
  * Overrides the variables of an object with a custom value when it is serialized.
  *
@@ -67,76 +53,65 @@ GLOBAL_LIST_EMPTY(save_containers_children)
 	. = list()
 	if(uses_integrity && (atom_integrity != max_integrity))
 		.[NAMEOF(src, atom_integrity)] = atom_integrity
-	return .
 
-/**
- * A procedure for saving non-standard properties of an object.
- * Examples:
- * - Saving material stacks (ie. ore in a silo)
- * - Saving variables that can be shown as mapping helpers (ie. welded airlock mapping helper)
- * - Saving objects inside of another object (ie. paper inside a noticeboard)
- *
- * Returns: Null or array list of additional object data to be included on turf
- */
-/atom/proc/on_object_saved(map_string, turf/current_loc, list/obj_blacklist)
-	return
-
-/// Helper proc to save children objects that are stored inside the contents of the source object
-/// ignore ids is for objects that automatically handle inserting objects inside the parent like closets, lockers, notice boards, etc.
-/obj/proc/save_stored_contents(map_string, turf/current_loc, list/obj_blacklist, list/extra_contents=null, include_ids=TRUE)
-	var/parent_container_id_tag
-	for(var/obj/target_obj in contents)
-		if(!target_obj.is_saveable(current_loc, obj_blacklist))
-			continue
-
-		if(include_ids)
-			if(!parent_container_id_tag)
-				parent_container_id_tag = assign_random_name()
-				GLOB.save_containers_parents[src] = parent_container_id_tag
-
-			// link the stored child object to the id of the parent container
-			GLOB.save_containers_children[target_obj] = parent_container_id_tag
-
-		target_obj.on_object_saved(map_string, current_loc, obj_blacklist)
-		var/metadata = generate_tgm_metadata(target_obj)
-		TGM_MAP_BLOCK(map_string, target_obj.type, metadata)
-
-	for(var/obj/target_obj in extra_contents)
-		if(!target_obj.is_saveable(current_loc, obj_blacklist))
-			continue
-		if(target_obj in contents)
-			continue // already been saved
-
-		if(!parent_container_id_tag)
-			parent_container_id_tag = assign_random_name()
-			GLOB.save_containers_parents[src] = parent_container_id_tag
-
-		// link the stored child object to the id of the parent container
-		GLOB.save_containers_children[target_obj] = parent_container_id_tag
-
-		target_obj.on_object_saved(map_string, current_loc, obj_blacklist)
-		var/metadata = generate_tgm_metadata(target_obj)
-		TGM_MAP_BLOCK(map_string, target_obj.type, metadata)
+	if(!QDELETED(reagents))
+		var/list/reagent_list = list(
+			"max_volume" = reagents.maximum_volume,
+			"flags" =  reagents.flags,
+			"temp" = reagents.chem_temp
+		)
+		for(var/datum/reagent/reg as anything in reagents.reagent_list)
+			reagent_list[reg.type] = "[reg.volume]/[reg.ph]/[reg.purity]"
+		.["reagents"] = reagent_list
 
 /obj/get_custom_save_vars(save_flags=ALL)
-	. = list()
+	return list()
 
-	// this might cause hard deletes tied to the object as references ? but these lists get deleted at the end of map saving
-	if(GLOB.save_containers_parents[src])
-		.[NAMEOF(src, save_container_parent_id)] = GLOB.save_containers_parents[src]
-	if(GLOB.save_containers_children[src])
-		.[NAMEOF(src, save_container_child_id)] = GLOB.save_containers_children[src]
-	return .
-
-/obj/PersistentInitialize()
-/*
-	if(save_container_parent_id)
-		GLOB.save_containers_parents[save_container_parent_id] = src
-
-	if(save_container_child_id)
-		GLOB.save_containers_children += src
-*/
+/atom/PersistentInitialize(list/attributes)
 	. = ..()
+
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "reagents")
+			var/list/reagent_list = resolved_value
+
+			create_reagents(text2num(popkey(reagent_list, "max_volume")), text2num(popkey(reagent_list, "flags")))
+			var/temp = text2num(popkey(reagent_list, "temp"))
+			for(var/reg_path in reagent_list)
+				var/list/reg_data = splittext(reagent_list[reg_path], "/")
+				reagents.add_reagent(
+					reg_path,
+					text2num(reg_data[1]),
+					reagtemp = temp,
+					added_purity = text2num(reg_data[2]),
+					added_ph = text2num(reg_data[3])
+				)
+
+			return
+
+/atom/movable/PersistentInitialize(list/attributes)
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "contents")
+			for(var/obj/item in contents)
+				qdel(item)
+
+			for(var/obj/item in resolved_value)
+				if(atom_storage)
+					atom_storage.attempt_insert(item, override = TRUE, messages = FALSE, force = STORAGE_FULLY_LOCKED)
+				else
+					item.forceMove(src)
+			continue
+
+		var/atom/data = resolved_value
+		if(isatom(data))
+			var/value = vars[attribute]
+			if(isatom(value)) //it may contain an default value which we want to delete
+				qdel(value)
+			vars[attribute] = data
+			if(ismovable(data))
+				var/atom/movable/move = data
+				move.forceMove(src)
+
+	..()
 
 /**
  * Check if an atom is savable for serilization during map export.

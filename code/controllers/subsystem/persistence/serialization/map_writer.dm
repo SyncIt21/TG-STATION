@@ -40,6 +40,7 @@
 	var/list/header_data = list() //holds the data of a header -> to its key
 	var/list/header = list() //The actual header in text
 	var/list/contents = list() //The contents in text (bit at the end)
+	var/list/global_refs = list() //all atom refs in the game
 	var/key_index = 1 // How many keys we've generated so far
 
 	for(var/z in 0 to depth)
@@ -120,7 +121,7 @@
 					if(!is_custom_shuttle_area) // only save the docking ports for default shuttles (arrivals/cargo/mining/etc.)
 						var/obj/docking_port/stationary/shuttle_port = locate(/obj/docking_port/stationary) in pull_from
 						if(shuttle_port)
-							var/shuttle_metadata = generate_tgm_metadata(shuttle_port)
+							var/shuttle_metadata = generate_tgm_metadata(shuttle_port, save_flags = save_flags)
 							TGM_MAP_BLOCK(current_header, shuttle_port.type, shuttle_metadata)
 
 
@@ -143,37 +144,54 @@
 					SSworld_save.counted_areas[saved_area.type] = TRUE
 					INCREMENT_AREA_COUNT
 
-				for(var/atom/movable/target_atom as anything in pull_from)
-					if(!target_atom.is_saveable(pull_from, obj_blacklist))
+				//Add objects to the header file
+				var/write_refs = FALSE
+				var/list/stuff = pull_from.contents.Copy(1)
+				while(stuff.len)
+					var/atom/thing = popleft(stuff)
+					if(istext(thing))
+						thing = global_refs[thing]
+					if(!thing.is_saveable(pull_from, obj_blacklist))
 						continue
 
 					//====SAVING OBJECTS====
-					if((save_flags & SAVE_OBJECTS) && isobj(target_atom))
-						CHECK_TICK
-
+					if(isobj(thing))
+						var/obj/obj_thing = thing
+						if(!(save_flags & SAVE_OBJECTS))
+							continue
+						if(obj_blacklist[thing.type])
+							continue
+						if(thing.flags_1 & HOLOGRAM_1)
+							continue
+						if((thing in pull_from.contents) && is_multi_tile_object(obj_thing) && (thing.loc != pull_from))
+							continue
 						if(OBJECT_LIMIT_EXCEEDED)
 							continue
 						INCREMENT_OBJ_COUNT()
-
 					//====SAVING MOBS====
-					else if((save_flags & SAVE_MOBS) && isliving(target_atom))
-						CHECK_TICK
-
+					else
+						if(!isliving(thing))
+							continue
+						if(istype(thing, /mob/living/carbon)) //Ignore people, but not animals
+							continue
+						if(!(save_flags & SAVE_MOBS))
+							continue
 						if(MOB_LIMIT_EXCEEDED)
 							continue
 						INCREMENT_MOB_COUNT()
 
 					// if a typepath substitute was performed we don't need to save original object data
-					if(target_atom.substitute_with_typepath(current_header))
+					if(thing.substitute_with_typepath(current_header))
 						continue
 
-					//====SAVING SPECIAL DATA====
-					//This is what causes lockers and machines to save stuff inside of them
-					if((save_flags & SAVE_OBJECTS_PROPERTIES))
-						target_atom.on_object_saved(current_header, pull_from, obj_blacklist)
+					//generate metadata
+					var/list/local_refs = list()
+					TGM_MAP_BLOCK(current_header, thing.type, generate_tgm_metadata(thing, local_refs, global_refs, write_refs, save_flags))
 
-					var/metadata = generate_tgm_metadata(target_atom, save_flags)
-					TGM_MAP_BLOCK(current_header, target_atom.type, metadata)
+					//save any object references on the object
+					for(var/atom_id in local_refs)
+						write_refs = TRUE
+						stuff += atom_id
 
 				var/turf_metadata
 				//====SAVING ATMOS====
@@ -184,13 +202,13 @@
 					// - Space: Gas is constantly purged and temperature is immutable
 					// - Planetary: Atmos slowly reverts to its default gas mix
 					if(isopenturf(atmos_turf) && !isspaceturf(atmos_turf) && !atmos_turf.planetary_atmos)
-						turf_metadata = generate_tgm_metadata(atmos_turf, save_flags)
+						turf_metadata = generate_tgm_metadata(atmos_turf, save_flags = save_flags)
 
 				TGM_MAP_BLOCK(current_header, saved_turf.type, turf_metadata)
 
 				var/area_metadata
 				if(!ispath(saved_area) && !istype(saved_area, /area/space))
-					area_metadata = generate_tgm_metadata(saved_area)
+					area_metadata = generate_tgm_metadata(saved_area, save_flags = save_flags)
 
 				TGM_MAP_BLOCK(current_header, saved_area.type, area_metadata)
 
@@ -206,10 +224,7 @@
 					header_data[textiftied_header] = key
 				contents += "[key]\n"
 			contents += "\"}"
-
-	// These always need to be reset between saves so old child/parents storages dont get mixed up
-	GLOB.save_containers_parents.Cut()
-	GLOB.save_containers_children.Cut()
+	GLOB.map_export_saved_pipelines.Cut()
 
 	return "//[DMM2TGM_MESSAGE]\n[header.Join()][contents.Join()]"
 

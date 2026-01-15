@@ -3,7 +3,6 @@
 /obj/machinery/meter/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, target_layer)
-	return .
 
 /obj/machinery/atmospherics/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -13,7 +12,35 @@
 	. += NAMEOF(src, vent_movement)
 
 	. -= NAMEOF(src, id_tag)
-	return .
+
+/obj/machinery/atmospherics/PersistentInitialize(list/attributes)
+	. = ..()
+	if(on)
+		set_on(TRUE)
+
+/obj/machinery/atmospherics/pipe/get_custom_save_vars(save_flags)
+	. = ..()
+
+	//save the pipeline just once
+	if(parent)
+		if(!GLOB.map_export_saved_pipelines[parent])
+			.["air"] = parent.air.to_string()
+			GLOB.map_export_saved_pipelines[parent] = TRUE
+		return
+
+	//save temporary air in the absence of a pipeline
+	if(air_temporary)
+		.["air"] = air_temporary.to_string()
+
+/obj/machinery/atmospherics/pipe/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "air")
+			var/datum/gas_mixture/air_mixture = SSair.parse_gas_string(resolved_value)
+			if(parent)
+				parent.set_air(air_mixture)
+			else
+				air_temporary = air_mixture
 
 /obj/machinery/atmospherics/pipe/smart/substitute_with_typepath(map_string)
 	var/base_type = /obj/machinery/atmospherics/pipe/smart/manifold4w
@@ -81,7 +108,6 @@
 /obj/machinery/atmospherics/components/unary/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, welded)
-	return .
 
 /obj/machinery/atmospherics/components/unary/vent_pump/substitute_with_typepath(map_string)
 	var/base_type
@@ -130,7 +156,18 @@
 	. += NAMEOF(src, internal_pressure_bound)
 	. += NAMEOF(src, external_pressure_bound)
 	. += NAMEOF(src, fan_overclocked)
-	return .
+
+
+/obj/machinery/atmospherics/components/unary/vent_scrubber/get_save_vars(save_flags=ALL)
+	. = ..()
+	. += NAMEOF(src, scrubbing)
+	. += NAMEOF(src, filter_types)
+	. += NAMEOF(src, widenet)
+
+/obj/machinery/atmospherics/components/unary/vent_scrubber/get_custom_save_vars(save_flags)
+	. = ..()
+	if(filter_types.len)
+		.["filters"] = filter_types
 
 /obj/machinery/atmospherics/components/unary/vent_scrubber/substitute_with_typepath(map_string)
 	var/base_type = /obj/machinery/atmospherics/components/unary/vent_scrubber
@@ -165,40 +202,39 @@
 
 	return cached_typepath
 
-/obj/machinery/atmospherics/components/unary/vent_scrubber/get_save_vars(save_flags=ALL)
+/obj/machinery/atmospherics/components/unary/vent_scrubber/PersistentInitialize(list/attributes)
 	. = ..()
-	. += NAMEOF(src, scrubbing)
-	. += NAMEOF(src, filter_types)
-	. += NAMEOF(src, widenet)
-	return .
 
-/obj/machinery/atmospherics/components/unary/vent_scrubber/PersistentInitialize()
-	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "filters")
+			filter_types.Cut()
+			for(var/gas_type in resolved_value)
+				filter_types += gas_type
+			atmos_conditions_changed()
+
+			break
+
 	if(widenet)
 		set_widenet(widenet)
 
 /obj/machinery/atmospherics/components/unary/thermomachine/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, target_temperature)
-	return .
 
 /obj/machinery/atmospherics/components/trinary/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, flipped)
-	return .
 
 /obj/machinery/atmospherics/components/trinary/filter/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, transfer_rate)
 	. += NAMEOF(src, filter_type)
-	return .
 
 /obj/machinery/atmospherics/components/trinary/mixer/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, target_pressure)
 	. += NAMEOF(src, node1_concentration)
 	. += NAMEOF(src, node2_concentration)
-	return .
 
 /obj/machinery/atmospherics/components/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -206,13 +242,54 @@
 
 	if(override_naming)
 		. += NAMEOF(src, name)
-	return .
+
+/obj/machinery/atmospherics/components/get_custom_save_vars(save_flags)
+	var/list/datum/gas_mixture/stored_airs = list()
+	for(var/i in 1 to device_type)
+		var/datum/gas_mixture/stored_air = airs[i]
+		if(stored_air.total_moles() > MINIMUM_MOLE_COUNT)
+			//because list values are parsed at the = sign so we replace it
+			stored_airs += stored_air.to_string() + "/[i]"
+
+	if(length(stored_airs["airs"]))
+		.["airs"] += stored_airs
+
+/obj/machinery/atmospherics/components/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "airs")
+			for(var/gas in resolved_value)
+				var/list/gas_data = splittext(gas, "/")
+				airs[text2num(gas_data[2])].merge(SSair.parse_gas_string(gas_data[1]))
+
+			return
+
+/obj/machinery/atmospherics/components/binary/crystallizer/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, gas_input)
+
+/obj/machinery/atmospherics/components/binary/crystallizer/get_custom_save_vars(save_flags)
+	. = ..()
+	.["internal"] = internal.to_string()
+	if(selected_recipe)
+		.["recipe"] = selected_recipe.id
+
+
+/obj/machinery/atmospherics/components/binary/crystallizer/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "internal")
+			internal.merge(SSair.parse_gas_string(resolved_value))
+
+		else if(attribute == "recipe")
+			selected_recipe = GLOB.gas_recipe_meta[resolved_value]
+			update_parents() //prevent the machine from stopping because of the recipe change and the pipenet not updating
+			moles_calculations()
 
 /obj/item/pipe/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, piping_layer)
 	. += NAMEOF(src, pipe_color)
-	return .
 
 /obj/machinery/portable_atmospherics/canister/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -224,15 +301,13 @@
 	. += NAMEOF(src, base_icon_state)
 	. += NAMEOF(src, greyscale_colors)
 	. += NAMEOF(src, greyscale_config)
-	return .
 
 /obj/machinery/portable_atmospherics/get_custom_save_vars(save_flags=ALL)
 	. = ..()
 	var/datum/gas_mixture/gasmix = air_contents
 	.[NAMEOF(src, initial_gas_mix)] = gasmix.to_string()
-	return .
 
-/obj/machinery/portable_atmospherics/PersistentInitialize()
+/obj/machinery/portable_atmospherics/PersistentInitialize(list/attributes)
 	. = ..()
 	if((greyscale_colors != initial(greyscale_colors)) || (greyscale_config != initial(greyscale_config)))
 		set_greyscale(greyscale_colors, greyscale_config)
@@ -291,3 +366,98 @@
 	. = ..()
 	. += NAMEOF(src, volume_rate)
 
+/obj/machinery/air_sensor/get_save_vars()
+	. = ..()
+	. += NAMEOF(src, chamber_id)
+	. -= NAMEOF(src, contents)
+
+/obj/machinery/air_sensor/get_custom_save_vars(save_flags)
+	. = ..()
+
+	var/obj/machinery/atmospherics/components/unary/outlet_injector/expected_input
+	var/obj/machinery/atmospherics/components/unary/vent_pump/expected_output
+	for(var/obj/machinery/atmospherics/components/unary/device in oview(4, src))
+		if(istype(device, /obj/machinery/atmospherics/components/unary/outlet_injector))
+			expected_input = device
+		else if(istype(device, /obj/machinery/atmospherics/components/unary/vent_pump))
+			expected_output = device
+
+	var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = GLOB.objects_by_id_tag[inlet_id || ""]
+	if(istype(inlet) && !QDELETED(inlet) && inlet != expected_input)
+		var/turf/target_turf = get_turf(inlet)
+		.["inlet_coords"] = list(target_turf.x, target_turf.y, target_turf.z)
+
+	var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = GLOB.objects_by_id_tag[outlet_id || ""]
+	if(istype(outlet) && !QDELETED(outlet) && outlet != expected_output)
+		var/turf/target_turf = get_turf(outlet)
+		.["outlet_coords"] = list(target_turf.x, target_turf.y, target_turf.z)
+
+/obj/machinery/air_sensor/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "inlet_coords")
+			var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
+
+			inlet_id = inlet.id_tag
+
+		else if(attribute == "outlet_coords")
+			var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
+
+			outlet_id = outlet.id_tag
+
+/obj/machinery/computer/atmos_control/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, atmos_chambers)
+
+/obj/machinery/atmospherics/components/unary/hypertorus/core/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, start_power)
+	. += NAMEOF(src, start_cooling)
+	. += NAMEOF(src, start_fuel)
+	. += NAMEOF(src, start_moderator)
+	. += NAMEOF(src, heating_conductor)
+	. += NAMEOF(src, magnetic_constrictor)
+	. += NAMEOF(src, fuel_injection_rate)
+	. += NAMEOF(src, moderator_injection_rate)
+	. += NAMEOF(src, current_damper)
+	. += NAMEOF(src, waste_remove)
+	. += NAMEOF(src, moderator_scrubbing)
+	. += NAMEOF(src, moderator_filtering_rate)
+
+/obj/machinery/atmospherics/components/unary/hypertorus/core/get_custom_save_vars(save_flags)
+	. = ..()
+	if(!isnull(selected_fuel))
+		.["fuel"] = selected_fuel.id
+
+	.["activate"] = list(
+		airs[1].volume,
+		internal_fusion.total_moles() ? internal_fusion.to_string() : "N/A",
+		active
+	)
+
+/obj/machinery/atmospherics/components/unary/hypertorus/core/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "power")
+			start_power = TRUE
+
+			update_use_power(ACTIVE_POWER_USE)
+
+		else if(attribute == "fuel")
+			selected_fuel = GLOB.hfr_fuels_list[resolved_value]
+
+		else if(attribute == "activate")
+			if(!check_part_connectivity())
+				continue
+
+			airs[1].volume = resolved_value[1]
+			if(resolved_value[2] != "N/A")
+				internal_fusion.merge(SSair.parse_gas_string(resolved_value[2]))
+			update_parents() //prevent the machine from stopping because of the recipe change and the pipenet not updating
+			linked_input.update_parents()
+			linked_output.update_parents()
+			linked_moderator.update_parents()
+
+			linked_interface.connected_core = src
+			if(resolved_value[3])
+				activate(usr)

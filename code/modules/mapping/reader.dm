@@ -63,6 +63,8 @@
 #define MAP_TGM "tgm"
 #define MAP_UNKNOWN "unknown"
 
+#define NULL_REF_ID "-1"
+
 /datum/grid_set
 	var/xcrd
 	var/ycrd
@@ -102,7 +104,7 @@
 	/// Matches key formats in TMG (IE: newline after the \()
 	var/static/regex/matches_tgm = new(@'^"[A-z]*"[\s]*=[\s]*\([\s]*\n', "m")
 	/// Pulls out key value pairs for TGM
-	var/static/regex/var_edits_tgm = new(@'^\t([A-z0-9]*) = (.*?);?$')
+	var/static/regex/var_edits_tgm = new(@'^\t(#?[A-z0-9]*) = (.*?);?$')
 	/// Pulls out model paths for DMM
 	var/static/regex/model_path = new(@'(\/[^\{]*?(?:\{.*?\})?)(?:,|$)', "g")
 
@@ -499,6 +501,7 @@
 			if(!cache)
 				SSatoms.map_loader_stop(REF(src))
 				CRASH("Undefined model key in DMM: [gset.gridLines[i]]")
+
 			build_coordinate(cache, locate(true_xcrd, ycrd, zcrd), no_afterchange, place_on_top, new_z)
 
 			// only bother with bounds that actually exist
@@ -655,6 +658,7 @@
 				if(!cache)
 					SSatoms.map_loader_stop(REF(src))
 					CRASH("Undefined model key in DMM: [model_key]")
+
 				build_coordinate(cache, locate(xcrd, ycrd, zcrd), no_afterchange, place_on_top, new_z)
 
 				// only bother with bounds that actually exist
@@ -683,6 +687,20 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	if(map_format == MAP_TGM)
 		return tgm_build_cache(no_changeturf, bad_paths)
 	return dmm_build_cache(no_changeturf, bad_paths)
+
+/datum/parsed_map/proc/record_special_attributes(attribute, value, list/ref_attributes)
+	//special attributes
+	if(attribute == "contents" || attribute == INTERNAL_ID)
+		ref_attributes[attribute] = value
+	//custom attribute
+	else if(attribute[1] == "#")
+		ref_attributes[attribute] = value
+	//ref value
+	else if(istext(value))
+		var/length = length(value)
+		if(length && value[1] == "\[" && length > 2 && value[length] == "]") //its an ref to another atom
+			ref_attributes[attribute] = value
+	return attribute
 
 /datum/parsed_map/proc/tgm_build_cache(no_changeturf, bad_paths=null)
 	if(modelCache && !bad_paths)
@@ -715,6 +733,8 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		var/list/members = list()
 		//will contain lists filled with corresponding variables, if any (in our example : list(icon_state = "rock") and list())
 		var/list/members_attributes = list()
+		//will contain ref attributes which are corresponding variables whos values will be resolved into atoms later on
+		var/list/ref_attributes = list()
 
 		/////////////////////////////////////////////////////////
 		//Constructing members and corresponding variables lists
@@ -734,17 +754,22 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					var/value = parse_constant(var_edits.group[2])
 					if(istext(value))
 						value = apply_text_macros(value)
-					current_attributes[var_edits.group[1]] = value
+					current_attributes[record_special_attributes(var_edits.group[1], value, ref_attributes)] = value
 					continue // Keep on keeping on brother
-				if("{") // Start of an edit, and so also the start of a path
+				if("{") // Start of an edit, and so also the start of a path with attributes
 					editing = TRUE
 					current_attributes = list() // Init the list we'll be filling
 					members_attributes += list(current_attributes)
 					path_to_init = copytext(line, 1, -1)
 				if(",") // Either the end of a path, or the end of an edit
-					if(editing) // it was the end of a path
+					if(editing) // it was the end of a path which had attributes
 						editing = FALSE
-						continue
+						//store special attributes
+						if(ref_attributes.len)
+							current_attributes[REF_ATTRIBUTES] = ref_attributes.Copy()
+							ref_attributes.Cut()
+						continue // Keep on keeping on brother
+
 					members_attributes += wrapped_default_list // We know this is a path, and we also know it has no vv's. so we'll just set this to the default list
 					// Drop the last char mind
 					path_to_init = copytext(line, 1, -1)
@@ -762,12 +787,11 @@ GLOBAL_LIST_EMPTY(map_model_default)
 						var/value = parse_constant(var_edits.group[2])
 						if(istext(value))
 							value = apply_text_macros(value)
-						current_attributes[var_edits.group[1]] = value
+						current_attributes[record_special_attributes(var_edits.group[1], value, ref_attributes)] = value
 						continue // Keep on keeping on brother
 
 					members_attributes += wrapped_default_list // We know this is a path, and we also know it has no vv's. so we'll just set this to the default list
 					path_to_init = line
-
 
 			// Alright, if we've gotten to this point, our string is a path
 			// Oh and we don't trim it, because we require no padding for these
@@ -818,7 +842,8 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	var/set_space = FALSE
 	// Use where a list is needed, but where it will not be modified
 	// Used here to remove the cost of needing to make a new list for each fields entry when it's set manually later
-	var/static/list/default_list = list(GLOB.map_model_default)
+	var/static/list/default_list = GLOB.map_model_default
+	var/static/list/wrapped_default_list = list(default_list)
 	for(var/model_key in grid_models)
 		//will contain all members (paths) in model (in our example : /turf/unsimulated/wall)
 		var/list/members = list()
@@ -841,6 +866,10 @@ GLOBAL_LIST_EMPTY(map_model_default)
 				variables_start = findtext(member_string, "{")
 
 			var/path_text = trim(copytext(member_string, 1, variables_start))
+			// check path to see if its member attribute value
+			// its format is %<number>%/<actual object path>
+			var/list/ref_attributes = list()
+
 			var/atom_def = text2path(path_text) //path definition, e.g /obj/foo/bar
 
 			if(!ispath(atom_def, /atom)) // Skip the item if the path does not exist.  Fix your crap, mappers!
@@ -852,16 +881,19 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			//transform the variables in text format into a list (e.g {var1="derp"; var2; var3=7} => list(var1="derp", var2, var3=7))
 			// OF NOTE: this could be made faster by replacing readlist with a progressive regex
 			// I'm just too much of a bum to do it rn, especially since we mandate tgm format for any maps in repo
-			var/list/fields = default_list
+			var/list/fields = wrapped_default_list
 			if(variables_start)//if there's any variable
 				member_string = copytext(member_string, variables_start + length(member_string[variables_start]), -length(copytext_char(member_string, -1))) //removing the last '}'
 				fields = list(readlist(member_string, ";"))
 				for(var/I in fields)
 					var/value = fields[I]
 					if(istext(value))
-						fields[I] = apply_text_macros(value)
+						value = apply_text_macros(value)
+						fields[record_special_attributes(I, value, ref_attributes)] = value
 
 			//then fill the members_attributes list with the corresponding variables
+			if(ref_attributes.len)
+				fields[REF_ATTRIBUTES] = ref_attributes
 			members_attributes += fields
 			MAPLOADING_CHECK_TICK
 
@@ -894,9 +926,10 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// Note, this would actually drop area vvs in the tile, but like, why tho
 	if(!crds)
 		return
-	var/index
+
 	var/list/members = model[1]
 	var/list/members_attributes = model[2]
+	var/index = members.len
 
 	// We use static lists here because it's cheaper then passing them around
 	var/static/list/default_list = GLOB.map_model_default
@@ -907,9 +940,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	if(turf_blacklist?[crds])
 		return
 
+	//first preloader pass
 	//The next part of the code assumes there's ALWAYS an /area AND a /turf on a given tile
 	//first instance the /area and remove it from the members list
-	index = members.len
 	var/area/old_area
 	if(members[index] != /area/template_noop)
 		if(members_attributes[index] != default_list)
@@ -937,43 +970,115 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		if(GLOB.use_preloader)
 			world.preloader_load(area_instance)
 
-	// Index right before /area is /turf
-	index--
-	var/atom/instance
-	//then instance the /turf
-	//NOTE: this used to place any turfs before the last "underneath" it using .appearance and underlays
-	//We don't actually use this, and all it did was cost cpu, so we don't do this anymore
-	if(members[index] != /turf/template_noop)
+	var/list/atom_refs = list()
+	for(index = members.len - 1; index >= 1; index--)
+		var/obj_ref_id
+		var/has_ref_attributes
+		var/list/retained_ref_attributes
+		var/atom/instance
+		var/list/atom_member_attributes = members_attributes[index]
+
+		//find member attributes that references another atom. we retain them to replace with their pointed value
+		if(atom_member_attributes.len)
+			retained_ref_attributes = atom_member_attributes[REF_ATTRIBUTES]
+			has_ref_attributes = length(retained_ref_attributes)
+			if(has_ref_attributes)
+				obj_ref_id = retained_ref_attributes[INTERNAL_ID]
+
+		// setup preloader
 		if(members_attributes[index] != default_list)
-			world.preloader_setup(members_attributes[index], members[index])
+			var/list/final_member_attributes = atom_member_attributes
+			if(has_ref_attributes) //ref attributes are loaded differently so filter them out
+				final_member_attributes = final_member_attributes.Copy()
+				for(var/ref_attribute in retained_ref_attributes)
+					final_member_attributes -= ref_attribute
+				final_member_attributes -= REF_ATTRIBUTES
 
-		// Note: we make the assertion that the last path WILL be a turf. if it isn't, this will fail.
-		if(placeOnTop)
-			instance = crds.load_on_top(members[index], CHANGETURF_DEFER_CHANGE | (no_changeturf ? CHANGETURF_SKIP : NONE))
-		else if(no_changeturf)
-			instance = create_atom(members[index], crds)//first preloader pass
-		else
-			instance = crds.ChangeTurf(members[index], null, CHANGETURF_DEFER_CHANGE)
+			world.preloader_setup(final_member_attributes , members[index])
 
-		if(GLOB.use_preloader && instance)//second preloader pass, for those atoms that don't ..() in New()
-			world.preloader_load(instance)
-	// If this isn't template work, we didn't change our turf and we changed area, then we've gotta handle area lighting transfer
-	else if(!no_changeturf && old_area)
-		// Don't do contain/uncontain stuff, this happens a few lines up when the area actally changes
-		crds.on_change_area(old_area, crds.loc)
-	MAPLOADING_CHECK_TICK
+		//nstance the /turf
+		//NOTE: this used to place any turfs before the last "underneath" it using .appearance and underlays
+		//We don't actually use this, and all it did was cost cpu, so we don't do this anymore
+		if(index == members.len - 1)
+			if(members[index] != /turf/template_noop)
+				// Note: we make the assertion that the last path WILL be a turf. if it isn't, this will fail.
+				if(placeOnTop)
+					instance = crds.load_on_top(members[index], CHANGETURF_DEFER_CHANGE | (no_changeturf ? CHANGETURF_SKIP : NONE))
+				else if(no_changeturf)
+					instance = create_atom(members[index], crds)//first preloader pass
+				else
+					instance = crds.ChangeTurf(members[index], null, CHANGETURF_DEFER_CHANGE)
 
-	//finally instance all remainings objects/mobs
-	for(var/atom_index in 1 to index-1)
-		if(members_attributes[atom_index] != default_list)
-			world.preloader_setup(members_attributes[atom_index], members[atom_index])
+				// delete everything on the turf for a fresh start
+				if(!no_changeturf)
+					for(var/atom/thing in instance)
+						qdel(thing)
+			// If this isn't template work, we didn't change our turf and we changed area, then we've gotta handle area lighting transfer
+			else if(!no_changeturf && old_area)
+				// Don't do contain/uncontain stuff, this happens a few lines up when the area actally changes
+				crds.on_change_area(old_area, crds.loc)
+				continue
 
-		// We make the assertion that only /atom s will be in this portion of the code. if that isn't true, this will fail
-		instance = create_atom(members[atom_index], crds)//first preloader pass
+		if(!instance)
+			instance = create_atom(members[index], crds) // We make the assertion that only /atom s will be in this portion of the code. if that isn't true, this will fail
+			if(obj_ref_id)
+				atom_refs[obj_ref_id] = instance
+			SSworld_save.world_save_loaders[instance] = list()
 
-		if(GLOB.use_preloader && instance)//second preloader pass, for those atoms that don't ..() in New()
+		//if we have ref attributes then form the map to decode it later
+		if(has_ref_attributes)
+			var/list/atoms = atom_refs[NULL_REF_ID]
+			if(!atoms)
+				atoms = list()
+			var/list/atom_ref_attributes = retained_ref_attributes.Copy()
+			atom_ref_attributes -= INTERNAL_ID
+			atoms[instance] = atom_ref_attributes
+			atom_refs[NULL_REF_ID] = atoms
+
+		//second preloader pass, for those atoms that don't ..() in New()
+		if(GLOB.use_preloader && instance)
 			world.preloader_load(instance)
 		MAPLOADING_CHECK_TICK
+
+
+	var/atom/instance
+	if(atom_refs.len)
+		var/list/atom/turf_atoms = atom_refs[NULL_REF_ID]
+		for(var/instance, ref_attributes in turf_atoms)
+
+			//convert refs to solid atoms. We only set their values after atom init which isn't done here
+			var/list/resolved_members = list()
+			for(var/attribute in ref_attributes)
+				var/resolved_value = ref_attributes[attribute]
+				if(attribute[1] == "#")
+					attribute = copytext(attribute, 2)
+				if(islist(resolved_value))
+					var/list/data = list(resolved_value)
+					while(data.len)
+						var/list/target = popleft(data)
+						for(var/i in 1 to target.len)
+							var/key = target[i]
+							if(isnum(key))
+								continue
+							var/value = target[key]
+							if(isnull(value))
+								value = key
+								key = i
+							if(istext(value))
+								var/atom/movable/thing = atom_refs[value]
+								if(ismovable(thing) && !QDELETED(thing))
+									target[key] = thing
+								else
+									target -= key
+							else if(islist(value))
+								data += list(value)
+				else if(istext(resolved_value))
+					resolved_value = atom_refs[resolved_value]
+					if(isnull(resolved_value))
+						continue
+				resolved_members[attribute] = resolved_value
+			if(resolved_members.len)
+				SSworld_save.world_save_loaders[instance] = resolved_members
 
 ////////////////
 //Helpers procs
@@ -1113,4 +1218,5 @@ GLOBAL_LIST_EMPTY(map_model_default)
 #undef MAP_DMM
 #undef MAP_TGM
 #undef MAP_UNKNOWN
+#undef NULL_REF_ID
 #undef MAPLOADING_CHECK_TICK

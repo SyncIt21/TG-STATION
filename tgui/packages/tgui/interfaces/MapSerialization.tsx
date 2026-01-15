@@ -31,7 +31,6 @@ type ZLevel = {
 type SaveFlags = {
   objects: BooleanLike;
   objects_variables: BooleanLike;
-  objects_properties: BooleanLike;
   mobs: BooleanLike;
   turfs: BooleanLike;
   turfs_atmos: BooleanLike;
@@ -220,15 +219,6 @@ function SaveFlagsSection() {
                   disabled={is_saving || !save_flags.objects}
                   onClick={() =>
                     act('toggle_save_flag', { flag: 'objects_variables' })
-                  }
-                />
-              </LabeledList.Item>
-              <LabeledList.Item label="Save Object Properties">
-                <Button.Checkbox
-                  checked={save_flags.objects_properties}
-                  disabled={is_saving || !save_flags.objects}
-                  onClick={() =>
-                    act('toggle_save_flag', { flag: 'objects_properties' })
                   }
                 />
               </LabeledList.Item>

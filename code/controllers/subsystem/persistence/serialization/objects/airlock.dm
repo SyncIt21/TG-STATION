@@ -4,6 +4,10 @@
 	. -= NAMEOF(src, opacity)
 	return .
 
+/obj/machinery/door/get_custom_save_vars(save_flags)
+	. = ..()
+	. -= NAMEOF(src, contents)
+
 /obj/machinery/door/airlock/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, autoname)
@@ -14,37 +18,56 @@
 
 	. -= NAMEOF(src, density)
 	. -= NAMEOF(src, opacity)
-	return .
 
-/obj/machinery/door/airlock/on_object_saved(map_string, turf/current_loc)
-	if(abandoned)
-		TGM_MAP_BLOCK(map_string, /obj/effect/mapping_helpers/airlock/abandoned, null)
-	else // Only save these if not abandoned
-		if(welded)
-			TGM_MAP_BLOCK(map_string, /obj/effect/mapping_helpers/airlock/welded, null)
-		if(locked && !cycle_pump) // cycle pumps has funky bolt behavior that needs to be ignored
-			TGM_MAP_BLOCK(map_string, /obj/effect/mapping_helpers/airlock/locked, null)
-	if(cyclelinkeddir)
-		var/obj/effect/mapping_helpers/airlock/cyclelink_helper/typepath = /obj/effect/mapping_helpers/airlock/cyclelink_helper
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, dir, cyclelinkeddir)
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
+	if(QDELETED(electronics))
+		. += NAMEOF(src, closeOtherId)
+		if(length(req_one_access))
+			. += NAMEOF(src, req_one_access)
+		else if(length(req_access))
+			. += NAMEOF(src, req_access)
 
-	if(closeOtherId)
-		var/obj/effect/mapping_helpers/airlock/cyclelink_helper_multi/typepath = /obj/effect/mapping_helpers/airlock/cyclelink_helper_multi
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, cycle_id, closeOtherId)
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
+/obj/machinery/door/airlock/get_custom_save_vars(save_flags)
+	. = ..()
 
-	if(unres_sides)
-		for(var/heading in list(NORTH, SOUTH, EAST, WEST))
-			if(unres_sides & heading)
-				var/obj/effect/mapping_helpers/airlock/unres/typepath = /obj/effect/mapping_helpers/airlock/unres
-				var/list/variables = list()
-				TGM_ADD_TYPEPATH_VAR(variables, typepath, dir, heading)
-				TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
+	if(!QDELETED(electronics))
+		electronics.passed_cycle_id = closeOtherId
+		if(length(req_one_access))
+			electronics.one_access = 1
+			electronics.accesses = req_one_access
+		else if(length(req_access))
+			electronics.accesses = req_access
+		.[NAMEOF(src, electronics)] = electronics
+
+/obj/machinery/door/airlock/PersistentInitialize(list/attributes)
+	. = ..()
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "electronics")
+			var/obj/item/electronics/airlock/saved = resolved_value
+			closeOtherId = saved.passed_cycle_id
+			if(saved.one_access)
+				req_one_access = saved.accesses
+			else if(length(saved.req_access))
+				req_access = saved.accesses
+
+			return
 
 /obj/machinery/door/poddoor/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, id)
 	return .
+
+/obj/machinery/door/window/get_save_vars(save_flags)
+	. = ..()
+	. -= NAMEOF(src, contents)
+
+	if(QDELETED(electronics))
+		if(length(req_one_access))
+			. += NAMEOF(src, req_one_access)
+		else if(length(req_access))
+			. += NAMEOF(src, req_access)
+
+/obj/machinery/door/window/get_custom_save_vars(save_flags)
+	. = ..()
+
+	if(!QDELETED(electronics))
+		.[NAMEOF(src, electronics)] = electronics

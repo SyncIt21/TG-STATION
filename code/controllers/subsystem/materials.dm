@@ -168,3 +168,19 @@ SUBSYSTEM_DEF(materials)
 			combo[GET_MATERIAL_REF(mat)] = OPTIMAL_COST(materials_declaration[mat] * multiplier)
 		material_combos[combo_index] = combo
 	return combo
+
+/// Filters out the non 0 material values from the material container
+/datum/controller/subsystem/materials/proc/to_list(datum/material_container/materials)
+	. = list()
+
+	var/amount = 0
+	for(var/datum/material/mat as anything in materials.materials)
+		amount = materials.materials[mat]
+		if(!amount)
+			continue
+		.[mat.type] = amount
+
+/// Sets the material container with values from the list
+/datum/controller/subsystem/materials/proc/set_list(datum/material_container/materials, list/mats)
+	for(var/datum/material/mat as anything in mats)
+		materials.insert_amount_mat(mats[mat], mat)

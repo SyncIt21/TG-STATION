@@ -319,7 +319,7 @@ Another example saving reagents from a container:
 Called after the object loads from a save. Use for post-load setup:
 
 ```dm
-/obj/machinery/camera/PersistentInitialize()
+/obj/machinery/camera/PersistentInitialize(list/attributes)
 	. = ..()
 	// Restore camera upgrades based on saved bitflags
 	if(camera_upgrade_bitflags & CAMERA_UPGRADE_XRAY)
@@ -333,7 +333,7 @@ Called after the object loads from a save. Use for post-load setup:
 Another example restoring machine state:
 
 ```dm
-/obj/machinery/power/port_gen/pacman/PersistentInitialize()
+/obj/machinery/power/port_gen/pacman/PersistentInitialize(list/attributes)
 	. = ..()
 	if(active)
 		active = FALSE  // Reset so TogglePower() works correctly
@@ -475,20 +475,6 @@ Many objects contain other objects (safes, bags, machines with parts). The world
 1. **During Save**: Parent gets a unique ID, children reference that ID
 2. **During Load**: Children look up parents by ID and move inside
 
-```dm
-// Saved format example - a secure safe containing items:
-/obj/structure/secure_safe{
-	save_container_parent_id = "xK9mP2";
-	stored_lock_code = "5173"
-	},
-/obj/item/documents/syndicate{
-	save_container_child_id = "xK9mP2"
-	},
-/obj/item/stack/spacecash/c1000{
-	save_container_child_id = "xK9mP2"
-	},
-```
-
 ### Using `save_stored_contents()`
 
 The helper proc handles most cases automatically:
@@ -519,7 +505,7 @@ Some objects store references outside of `contents`:
 In `PersistentInitialize()`, find and restore references:
 
 ```dm
-/obj/machinery/defibrillator_mount/PersistentInitialize()
+/obj/machinery/defibrillator_mount/PersistentInitialize(list/attributes)
 	. = ..()
 
 	// After load, children are in contents - find and assign to our var
@@ -565,7 +551,7 @@ Some containers (closets, lockers) handle insertion automatically during `Initia
 	return .
 
 // Update appearance after loading
-/obj/machinery/biogenerator/PersistentInitialize()
+/obj/machinery/biogenerator/PersistentInitialize(list/attributes)
 	. = ..()
 	update_appearance()
 ```

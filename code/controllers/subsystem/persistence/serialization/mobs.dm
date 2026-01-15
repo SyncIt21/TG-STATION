@@ -17,7 +17,7 @@
 	. -= NAMEOF(src, density)
 	return .
 
-/mob/living/basic/PersistentInitialize()
+/mob/living/basic/PersistentInitialize(list/attributes)
 	. = ..()
 	updatehealth()
 
@@ -31,7 +31,7 @@
 	. -= NAMEOF(src, density)
 	return .
 
-/mob/living/simple_animal/PersistentInitialize()
+/mob/living/simple_animal/PersistentInitialize(list/attributes)
 	. = ..()
 	updatehealth()
 

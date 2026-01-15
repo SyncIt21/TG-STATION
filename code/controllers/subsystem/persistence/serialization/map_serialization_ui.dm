@@ -53,7 +53,7 @@ ADMIN_VERB(map_serialization_ui, R_DEBUG, "Map Save", "Opens the map serializati
 
 				refresh_timer = addtimer(CALLBACK(src, PROC_REF(auto_refresh)), 1 SECONDS, TIMER_UNIQUE|TIMER_STOPPABLE|TIMER_LOOP)
 				// Start the save operation asynchronously
-				INVOKE_ASYNC(SSworld_save, TYPE_PROC_REF(/datum/controller/subsystem/persistence, save_world), z_levels_to_save, silent=TRUE)
+				INVOKE_ASYNC(SSworld_save, TYPE_PROC_REF(/datum/controller/subsystem/world_save, save_world), z_levels_to_save, silent=TRUE)
 
 		if("stop_save")
 			if(SSworld_save.save_in_progress)
@@ -171,7 +171,6 @@ ADMIN_VERB(map_serialization_ui, R_DEBUG, "Map Save", "Opens the map serializati
 
 	flags_data["objects"] = !!(save_flags & SAVE_OBJECTS)
 	flags_data["objects_variables"] = !!(save_flags & SAVE_OBJECTS_VARIABLES)
-	flags_data["objects_properties"] = !!(save_flags & SAVE_OBJECTS_PROPERTIES)
 
 	flags_data["mobs"] = !!(save_flags & SAVE_MOBS)
 
@@ -233,8 +232,6 @@ ADMIN_VERB(map_serialization_ui, R_DEBUG, "Map Save", "Opens the map serializati
 			persistent_save_flags["objects"] = !persistent_save_flags["objects"]
 		if("objects_variables")
 			persistent_save_flags["objects_variables"] = !persistent_save_flags["objects_variables"]
-		if("objects_properties")
-			persistent_save_flags["objects_properties"] = !persistent_save_flags["objects_properties"]
 		if("mobs")
 			persistent_save_flags["mobs"] = !persistent_save_flags["mobs"]
 		if("turfs")

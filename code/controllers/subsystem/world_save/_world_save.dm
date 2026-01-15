@@ -30,36 +30,26 @@ SUBSYSTEM_DEF(world_save)
 	var/save_in_progress = FALSE
 	/// Areas that have been counted
 	var/list/counted_areas = list()
+	/// List of all atoms that need to be Persistent initialized
+	var/list/world_save_loaders = list()
 
 /datum/controller/subsystem/world_save/Initialize()
 	if(CONFIG_GET(number/persistent_autosave_period) > 0 && CONFIG_GET(flag/persistent_save_enabled))
 		wait = CONFIG_GET(number/persistent_autosave_period) HOURS
 
-	for(var/obj/child in GLOB.save_containers_children)
-		var/parent_id = child.save_container_child_id
-		child.forceMove(GLOB.save_containers_parents[parent_id])
-		child.save_container_child_id = null
-
-	for(var/parent_id in GLOB.save_containers_parents)
-		var/obj/parent = GLOB.save_containers_parents[parent_id]
-		parent.update_appearance()
-		parent.save_container_parent_id = null
-
-	if(SSatoms.world_save_loaders.len)
+	if(world_save_loaders.len)
 		if(CONFIG_GET(flag/persistent_save_enabled))
-			for(var/I in 1 to SSatoms.world_save_loaders.len)
-				var/atom/A = SSatoms.world_save_loaders[I]
-				//I hate that we need this
-				if(QDELETED(A))
-					continue
-				A.PersistentInitialize()
+			LoadAtoms()
 			testing("Persistent initialized [SSatoms.world_save_loaders.len] atoms")
-		SSatoms.world_save_loaders.Cut()
-
-	GLOB.save_containers_parents.Cut()
-	GLOB.save_containers_children.Cut()
 
 	return SS_INIT_SUCCESS
+
+///Persistent Initializes all atoms
+/datum/controller/subsystem/world_save/proc/LoadAtoms()
+	for(var/to_load, attributes in world_save_loaders)
+		var/atom/thing = to_load
+		thing.PersistentInitialize(attributes)
+	world_save_loaders.Cut()
 
 /datum/controller/subsystem/world_save/fire(resumed = FALSE)
 	if(!was_first_roundstart_autosave_skipped) // prevents pointless autosave at the start of the game
@@ -257,8 +247,6 @@ SUBSYSTEM_DEF(world_save)
 		flags |= SAVE_OBJECTS
 	if(persistent_save_flags["objects_variables"])
 		flags |= SAVE_OBJECTS_VARIABLES
-	if(persistent_save_flags["objects_properties"])
-		flags |= SAVE_OBJECTS_PROPERTIES
 
 	if(persistent_save_flags["mobs"])
 		flags |= SAVE_MOBS

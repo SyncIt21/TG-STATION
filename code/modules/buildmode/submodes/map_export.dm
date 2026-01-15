@@ -10,7 +10,6 @@
 	var/static/list/options = list(
 		"Object Saving" = SAVE_OBJECTS,
 		"Object Variable Saving" = SAVE_OBJECTS_VARIABLES,
-		"Object Property Saving" = SAVE_OBJECTS_PROPERTIES,
 		"Mob Saving" = SAVE_MOBS,
 		"Turf Saving" = SAVE_TURFS,
 		"Turf Atmos Saving" = SAVE_TURFS_ATMOS,

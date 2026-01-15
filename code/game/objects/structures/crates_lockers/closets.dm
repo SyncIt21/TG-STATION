@@ -74,6 +74,7 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 	var/secure = FALSE
 	var/can_install_electronics = TRUE
 
+	var/contents_initialized = FALSE
 	var/is_maploaded = FALSE
 	/// is this closet locked by an exclusive id, i.e. your own personal locker
 	var/datum/weakref/id_card = null
@@ -151,7 +152,9 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 		is_maploaded = TRUE
 	. = INITIALIZE_HINT_LATELOAD
 
-	populate_contents_immediate()
+	//when saved via map export we only initialize if the exporter didn't save our stuff
+	if(!contents_initialized)
+		populate_contents_immediate()
 	var/static/list/loc_connections = list(
 		COMSIG_LIVING_DISARM_COLLIDE = PROC_REF(locker_living),
 		COMSIG_ATOM_MAGICALLY_UNLOCKED = PROC_REF(on_magic_unlock),
