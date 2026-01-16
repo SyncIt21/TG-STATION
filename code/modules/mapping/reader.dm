@@ -1063,13 +1063,18 @@ GLOBAL_LIST_EMPTY(map_model_default)
 							if(isnull(value))
 								value = key
 								key = i
+
+							if(istext(key))
+								var/atom/movable/movable_key = atom_refs[key]
+								if(ismovable(movable_key) && !QDELETED(movable_key))
+									key = movable_key
 							if(istext(value))
-								var/atom/movable/thing = atom_refs[value]
-								if(ismovable(thing) && !QDELETED(thing))
-									target[key] = thing
-								else
-									target -= key
-							else if(islist(value))
+								var/atom/movable/movable_value = atom_refs[value]
+								if(ismovable(movable_value) && !QDELETED(movable_value))
+									value = movable_value
+							target[key] = value
+
+							if(islist(value))
 								data += list(value)
 				else if(istext(resolved_value))
 					resolved_value = atom_refs[resolved_value]

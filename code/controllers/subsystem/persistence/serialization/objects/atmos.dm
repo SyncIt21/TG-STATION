@@ -244,6 +244,8 @@
 		. += NAMEOF(src, name)
 
 /obj/machinery/atmospherics/components/get_custom_save_vars(save_flags)
+	. = ..()
+
 	var/list/datum/gas_mixture/stored_airs = list()
 	for(var/i in 1 to device_type)
 		var/datum/gas_mixture/stored_air = airs[i]
@@ -393,17 +395,22 @@
 		.["outlet_coords"] = list(target_turf.x, target_turf.y, target_turf.z)
 
 /obj/machinery/air_sensor/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "inlet_coords")
 			var/obj/machinery/atmospherics/components/unary/outlet_injector/inlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
 
 			inlet_id = inlet.id_tag
 
+			attributes -= attribute
+
 		else if(attribute == "outlet_coords")
 			var/obj/machinery/atmospherics/components/unary/vent_pump/outlet = locate() in TURF_FROM_COORDS_LIST(resolved_value)
 
 			outlet_id = outlet.id_tag
+
+			attributes -= attribute
+
+	return ..()
 
 /obj/machinery/computer/atmos_control/get_save_vars(save_flags)
 	. = ..()

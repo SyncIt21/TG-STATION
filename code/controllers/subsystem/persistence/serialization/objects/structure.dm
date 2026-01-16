@@ -26,6 +26,7 @@
 	. += NAMEOF(src, locked)
 
 /obj/structure/closet/get_custom_save_vars(save_flags)
+	. = ..()
 	//basically if this closet has never been opened then don't save its contents cause it will spawn its own stuff
 	if(!opened && contents_initialized)
 		.[NAMEOF(src, contents_initialized)] = contents_initialized

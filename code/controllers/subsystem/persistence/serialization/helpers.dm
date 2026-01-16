@@ -45,7 +45,7 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 		// [";},/obj/item/gun/energy/laser/instakill{name="da epic gun] and spawn yourself an instakill gun.
 		var/list/replacement_characters = list("{"="", "}"="", "\""="", ","="")
 		HASHTAG_NEWLINES_AND_TABS(value, replacement_characters)
-		return "[value]"
+		return "\"[value]\""
 	if(isnum(value) || ispath(value))
 		return "[value]"
 	if(islist(value))
@@ -55,13 +55,17 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 	if(isicon(value) || isfile(value))
 		return "'[value]'"
 	if(isatom(value))
-		var/ref = REF(value)
+		var/atom/data = value
+		if(QDELETED(data))
+			return "null"
+
+		var/ref = REF(data)
 		//already written
 		if(global_refs[ref])
 			return ref
 		//write to file
-		local_refs[ref] = global_refs[ref] = value
-		//return ref
+		local_refs[ref] = global_refs[ref] = data
+
 		return ref
 	if(isdatum(value))
 		var/datum/thing = value
@@ -91,24 +95,9 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 		if(custom_variable == REF_ATTRIBUTES || custom_variable == INTERNAL_ID)
 			stack_trace("[custom_variable] is a protected variable name and cannot be exported")
 			continue
-		if(custom_value == initial(object.vars[custom_variable]) || !issaved(object.vars[custom_variable]))
-			continue
 
 		if(custom_variable == "contents")
-			custom_value = object.contents.Copy(1) //otherwise this would error in tgm_encode_list() with bad index cause its protected
-		else if(islist(custom_value))
-			var/atom_found = FALSE
-			for(var/item in custom_value)
-				if(isnum(item) || isnull(custom_value[item]))
-					if(isatom(item))
-						atom_found = TRUE
-				else
-					if(isatom(item))
-						atom_found = TRUE
-			if(atom_found) //no lists that are not ref attributes should contain atoms
-				stack_trace("[custom_variable] is a list that contains atoms as keys")
-				continue
-
+			custom_value = object.contents.Copy() //otherwise this would error in tgm_encode_list() with bad index cause its protected
 		var/text_value = tgm_encode(custom_value, local_refs, global_refs)
 		if(!custom_value)
 			continue
@@ -137,18 +126,28 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 			stack_trace("[variable] is a protected variable name and cannot be exported")
 			continue
 		if(islist(value))
-			var/atom_found = FALSE
-			for(var/item in value)
-				if(isnum(item) || isnull(value[item]))
-					if(isatom(item))
-						atom_found = TRUE
-				else
-					if(isatom(item))
-						atom_found = TRUE
-					else if(isatom(value[item]))
-						atom_found = TRUE
-			if(atom_found) //lists should not contain atoms here
-				stack_trace("[variable] is a list that contains atoms as either keys or values and should belong in custom attributes")
+			var/error
+			var/list/work_left = list(value)
+			while(!error && work_left.len)
+				var/list/data = popleft(work_left)
+				for(var/i in 1 to data.len)
+					var/k = data[i]
+					if(isnum(k))
+						continue
+					var/v = data[k]
+					if(isnull(v))
+						v = k
+						k = i
+
+					if(isatom(k) || isatom(v))
+						error = isatom(k) ? "[k]" : "[v]"
+					if(error)
+						break
+
+					if(islist(v))
+						work_left += list(v)
+			if(error)
+				stack_trace("Atom element [error] found in list. Use get_custom_save_vars() to save this list.)")
 				continue
 
 		var/text_value = tgm_encode(value, local_refs, global_refs)
@@ -168,7 +167,7 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 	for(var/variable in data_to_seralize)
 		var/value = data_to_seralize[variable]
 
-		tgm_encode(value)
+		value = tgm_encode(value)
 		if(!value)
 			continue
 		data_to_add += TGM_VAR_LINE(variable, value)

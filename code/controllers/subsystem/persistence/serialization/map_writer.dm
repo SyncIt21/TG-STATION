@@ -146,7 +146,7 @@
 
 				//Add objects to the header file
 				var/write_refs = FALSE
-				var/list/stuff = LAZYCOPY(pull_from.contents)
+				var/list/stuff = LAZYCOPY(pull_from?.contents)
 				while(stuff.len)
 					var/atom/thing = popleft(stuff)
 					if(istext(thing))

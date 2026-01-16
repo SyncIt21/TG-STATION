@@ -7,14 +7,10 @@
 	. = ..()
 	. -= NAMEOF(src, icon_state)
 
-/obj/item/get_save_vars(save_flags)
+/obj/item/get_custom_save_vars(save_flags)
 	. = ..()
 	if(contents.len && atom_storage)
-		. += NAMEOF(src, contents)
-
-/obj/item/stack/get_save_vars(save_flags)
-	. = ..()
-	. += NAMEOF(src, amount)
+		.[NAMEOF(src, contents)] = contents
 
 /obj/item/photo/get_save_vars(save_flags)
 	. = ..()
@@ -26,14 +22,6 @@
 	. += NAMEOF(src, assignment)
 	. += NAMEOF(src, access)
 	. += NAMEOF(src, trim)
-
-	if(registered_account.add_to_accounts)
-		. += list(list("data" = list(
-			registered_account.account_job.type,
-			registered_account.account_balance,
-			registered_account.mining_points,
-			registered_account.bitrunning_points
-		)))
 
 /obj/item/card/id/get_custom_save_vars(save_flags)
 	. = ..()
@@ -47,7 +35,6 @@
 		)
 
 /obj/item/card/id/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "data")
 			var/list/data = resolved_value
@@ -57,7 +44,11 @@
 			registered_account.mining_points = data[3]
 			registered_account.bitrunning_points = data[4]
 
-			return
+			attributes -= data
+
+			break
+
+	return ..()
 
 /obj/item/modular_computer/get_save_vars(save_flags)
 	. = ..()
@@ -163,7 +154,7 @@
 		else if(attribute == "modules")
 			for(var/obj/item/mod/module/mod in resolved_value)
 				install(mod)
-			attribute -= attribute
+			attributes -= attribute
 
 	return ..()
 

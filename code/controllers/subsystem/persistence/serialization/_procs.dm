@@ -20,19 +20,16 @@
 		. += NAMEOF(src, resistance_flags)
 
 	GLOB.map_export_save_vars_cache[type] = .
-	return .
 
 /atom/movable/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, anchored)
-	return .
 
 /obj/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, req_access)
 	. += NAMEOF(src, id_tag)
 	. += NAMEOF(src, obj_flags)
-	return .
 
 /obj/item/get_custom_save_vars(save_flags)
 	. = ..()
@@ -50,6 +47,8 @@
  * Returns: Assoicated list of variables with custom values to be serialized
  */
 /atom/proc/get_custom_save_vars(save_flags=ALL)
+	SHOULD_CALL_PARENT(TRUE)
+
 	. = list()
 	if(uses_integrity && (atom_integrity != max_integrity))
 		.[NAMEOF(src, atom_integrity)] = atom_integrity
@@ -64,14 +63,28 @@
 			reagent_list[reg.type] = "[reg.volume]/[reg.ph]/[reg.purity]"
 		.["reagents"] = reagent_list
 
-/obj/get_custom_save_vars(save_flags=ALL)
-	return list()
-
-/atom/PersistentInitialize(list/attributes)
-	. = ..()
+/**
+ * Similar to [LateInitialize], executes code necessary for atoms loaded from persistence that require extra setup.
+ *
+ * This procedure is called only when an atom is created via mapload and when CONFIG_GET(flag/persistent_save_enabled) is enabled.
+ * It runs immediately after all saved variables have been restored, after both [Initialize] and [LateInitialize],
+ * but before general post-initialization signals are sent.
+ *
+ * It is the ideal place to run code that restores the previous state of atoms, such as:
+ * - Calling update_appearance() to correct the visual state based on restored variables.
+ * - Reinserting contents into storage atoms (e.g., lockers, bags) after they were temporarily moved out during the persistence save process.
+ *
+ * Atoms created at runtime (non-mapload) will skip this call.
+ */
+/atom/proc/PersistentInitialize(list/attributes)
+	set waitfor = FALSE
+	SHOULD_CALL_PARENT(TRUE)
 
 	for(var/attribute, resolved_value in attributes)
-		if(attribute == "reagents")
+		if(attribute == NAMEOF(src, atom_integrity))
+			update_integrity(resolved_value)
+
+		else if(attribute == "reagents")
 			var/list/reagent_list = resolved_value
 
 			create_reagents(text2num(popkey(reagent_list, "max_volume")), text2num(popkey(reagent_list, "flags")))
@@ -86,7 +99,8 @@
 					added_ph = text2num(reg_data[3])
 				)
 
-			return
+		else
+			vars[attribute] = resolved_value
 
 /atom/movable/PersistentInitialize(list/attributes)
 	for(var/attribute, resolved_value in attributes)
@@ -99,6 +113,8 @@
 					atom_storage.attempt_insert(item, override = TRUE, messages = FALSE, force = STORAGE_FULLY_LOCKED)
 				else
 					item.forceMove(src)
+
+			attributes -= attribute
 			continue
 
 		var/atom/data = resolved_value
@@ -110,6 +126,7 @@
 			if(ismovable(data))
 				var/atom/movable/move = data
 				move.forceMove(src)
+			attributes -= attribute
 
 	..()
 

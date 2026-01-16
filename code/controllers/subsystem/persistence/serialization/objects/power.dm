@@ -25,7 +25,6 @@
 	if(!QDELETED(cable))
 		.["cable_coil"] = cable.amount
 
-
 /obj/item/rwd/PersistentInitialize(list/attributes)
 	. = ..()
 
@@ -62,6 +61,7 @@
 		.[NAMEOF(src, cell)] = cell
 
 /obj/machinery/power/apc/PersistentInitialize(list/attributes)
+	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "cell")
 			cell = resolved_value
@@ -96,7 +96,6 @@
 	. = ..()
 	.[NAMEOF(src, charge)] = charge
 
-
 /obj/item/stock_parts/power_store/PersistentInitialize(list/attributes)
 	. = ..()
 	for(var/attribute, resolved_value in attributes)
@@ -121,6 +120,10 @@
 	. = ..()
 	. += NAMEOF(src, material_type)
 	. += NAMEOF(src, power_tier)
+
+/obj/machinery/power/solar/get_custom_save_vars(save_flags)
+	. = ..()
+	. -= NAMEOF(src, contents)
 
 /obj/machinery/power/solar/PersistentInitialize(list/attributes)
 	. = ..()
@@ -147,6 +150,10 @@
 				track = SOLAR_TRACK_OFF
 		if(SOLAR_TRACK_TIMED)
 			set_panels(azimuth_target)
+
+/obj/machinery/power/tracker/get_custom_save_vars(save_flags)
+	. = ..()
+	. -= NAMEOF(src, contents)
 
 /obj/machinery/power/emitter/get_save_vars(save_flags=ALL)
 	. = ..()

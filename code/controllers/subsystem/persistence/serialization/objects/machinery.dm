@@ -18,14 +18,10 @@
 			.["datum_components"] = datum_components
 
 	//export everything else
-	.[NAMEOF(src, contents)] = contents
-
-//if(movable_atom in component_parts)
-//	continue
+	if(contents.len)
+		.[NAMEOF(src, contents)] = contents
 
 /obj/machinery/PersistentInitialize(list/attributes)
-	. = ..()
-
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "datum_components")
 			//remove existing parts
@@ -39,6 +35,7 @@
 					RefreshParts()
 					break
 				component_parts += GLOB.stock_part_datums[part_path]
+			attributes -= attribute
 
 		if(attribute == "contents")
 			var/list/contents = resolved_value
@@ -91,8 +88,11 @@
 
 			if(should_refresh)
 				RefreshParts()
+			attributes -= attribute
 
 	update_appearance()
+
+	return ..()
 
 /obj/machinery/camera/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -248,14 +248,17 @@
 		.["local_container"] = SSmaterials.to_list(rmat.mat_container)
 
 /obj/machinery/mecha_part_fabricator/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			rmat.disconnect()
 
 			SSmaterials.set_list(rmat.mat_container, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/autolathe/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -269,12 +272,15 @@
 	.["local_container"] = SSmaterials.to_list(materials)
 
 /obj/machinery/autolathe/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			SSmaterials.set_list(materials, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/plumbing/synthesizer/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -287,13 +293,15 @@
 	.["materials"] = SSmaterials.to_list(materials)
 
 /obj/machinery/ore_silo/PersistentInitialize(list/attributes)
-	. = ..()
-
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "materials")
 			SSmaterials.set_list(materials, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/rnd/production/get_custom_save_vars(save_flags)
 	. = ..()
@@ -302,14 +310,17 @@
 		.["local_container"] = SSmaterials.to_list(materials.mat_container)
 
 /obj/machinery/rnd/production/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			materials.disconnect()
 
 			SSmaterials.set_list(materials.mat_container, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/component_printer/get_custom_save_vars(save_flags)
 	. = ..()
@@ -317,16 +328,18 @@
 	if(QDELETED(materials.silo))
 		.["local_container"] = SSmaterials.to_list(materials.mat_container)
 
-
 /obj/machinery/component_printer/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			materials.disconnect()
 
 			SSmaterials.set_list(materials.mat_container, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/bouldertech/get_custom_save_vars(save_flags)
 	. = ..()
@@ -334,16 +347,18 @@
 	if(QDELETED(silo_materials.silo))
 		.["local_container"] = SSmaterials.to_list(silo_materials.mat_container)
 
-
 /obj/machinery/bouldertech/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			silo_materials.disconnect()
 
 			SSmaterials.set_list(silo_materials.mat_container, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/mineral/ore_redemption/get_custom_save_vars(save_flags)
 	. = ..()
@@ -351,16 +366,18 @@
 	if(QDELETED(materials.silo))
 		.["local_container"] = SSmaterials.to_list(materials.mat_container)
 
-
 /obj/machinery/mineral/ore_redemption/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "local_container")
 			materials.disconnect()
 
 			SSmaterials.set_list(materials.mat_container, resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/chem_heater/get_save_vars()
 	. = ..()
@@ -373,7 +390,6 @@
 /obj/machinery/airalarm/get_save_vars()
 	. = ..()
 	. -= NAMEOF(src, name)
-	. -= NAMEOF(src, contents)
 	. += NAMEOF(src, buildstage)
 
 /obj/machinery/airalarm/get_custom_save_vars(save_flags)
@@ -382,18 +398,17 @@
 	var/list/tlv_data = list()
 	for(var/key in tlv_collection)
 		var/datum/tlv/data = tlv_collection[key]
-		tlv_data["tlv"][key] = "[data.warning_min]/[data.warning_max]/[data.hazard_min]/[data.hazard_max]"
+		tlv_data[key] = "[data.warning_min]/[data.warning_max]/[data.hazard_min]/[data.hazard_max]"
 	.["tlv"] = tlv_data
 
-	. += NAMEOF(src, danger_level)
+	.[NAMEOF(src, danger_level)] = danger_level
 	.["selected_mode"] = selected_mode.type
 
-	. += NAMEOF(src, allow_link_change)
+	.[NAMEOF(src, allow_link_change)] = allow_link_change
 	if(length(air_sensor_chamber_id))
 		.["air_sensor"] = air_sensor_chamber_id
 
 /obj/machinery/airalarm/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "tlv")
 			var/list/tlv_list = resolved_value
@@ -408,13 +423,21 @@
 
 			update_appearance()
 
+			attributes -= attribute
+
 		else if(attribute == "selected_mode")
 			select_mode(src, resolved_value, TRUE)
+
+			attributes -= attribute
 
 		else if(attribute == "air_sensor")
 			air_sensor_chamber_id = resolved_value
 
 			setup_chamber_link()
+
+			attributes -= attribute
+
+	return ..()
 
 /obj/machinery/modular_computer/get_custom_save_vars(save_flags)
 	. = ..()
@@ -427,21 +450,23 @@
 	for(var/datum/computer_file/file in cpu.stored_files)
 		if(file.type in cpu.starting_programs)
 			continue
-		stored_files["stored_files"] += "[file.type]"
-	if(length(stored_files["stored_files"]))
+		stored_files += file
+	if(length(stored_files))
 		.["stored_files"] = stored_files
 
 /obj/machinery/modular_computer/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "stored_files")
 			for(var/program_type in resolved_value)
-				var/datum/computer_file/program = text2path(program_type)
-				program = new program
+				var/datum/computer_file/program = new program_type
 				if(!cpu.store_file(program))
 					qdel(program)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/vending/get_save_vars(save_flags)
 	. = ..()
@@ -455,9 +480,7 @@
 	. = ..()
 	linked_account = temp
 
-
 /obj/machinery/vending/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "contents")
 			var/obj/item/circuitboard/machine/vendor/board = locate() in resolved_value
@@ -471,11 +494,9 @@
 						record.amount += 1
 						break
 
-			return
+			break
 
-/obj/machinery/status_display/get_custom_save_vars(save_flags)
-	. = ..()
-	. -= NAMEOF(src, contents)
+	return ..()
 
 /obj/machinery/space_heater/PersistentInitialize(list/attributes)
 	. = ..()
@@ -483,13 +504,21 @@
 
 /obj/machinery/electrolyzer/PersistentInitialize(list/attributes)
 	. = ..()
-	cell = locate() in attributes
-
+	cell = locate() in contents
 
 /obj/machinery/reagentgrinder/PersistentInitialize(list/attributes)
-	. = ..()
-	beaker = locate() in contents
-	update_appearance(UPDATE_OVERLAYS)
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "contents")
+			var/obj/item/reagent_containers/find = locate() in resolved_value
+			if(!QDELETED(find))
+				QDEL_NULL(beaker)
+				beaker = find
+				beaker.forceMove(src)
+				resolved_value -= find
+				update_appearance(UPDATE_OVERLAYS)
+				break
+
+	return ..()
 
 /obj/machinery/chem_master/PersistentInitialize(list/attributes)
 	. = ..()
