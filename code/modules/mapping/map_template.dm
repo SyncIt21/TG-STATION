@@ -90,7 +90,6 @@
 		return
 
 	SSatoms.InitializeAtoms(areas + turfs + movables, returns_created_atoms ? created_atoms : null)
-	SSworld_save.LoadAtoms()
 
 	for(var/turf/unlit as anything in turfs)
 		if(unlit.space_lit)
@@ -113,6 +112,10 @@
 	for(var/turf/affected_turf as anything in template_and_bordering_turfs)
 		affected_turf.air_update_turf(TRUE, TRUE)
 		affected_turf.levelupdate()
+
+	//Load all atoms with special attributes which only exists from a world save
+	if(CONFIG_GET(flag/persistent_save_enabled))
+		SSworld_save.LoadAtoms()
 
 /datum/map_template/proc/load_new_z(secret = FALSE)
 	var/x = round((world.maxx - width) * 0.5) + 1

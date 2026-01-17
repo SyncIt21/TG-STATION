@@ -111,13 +111,13 @@
 		upgradeMotion()
 
 // in game built cameras spawn deconstructed
-/obj/machinery/camera/autoname/deconstructed/substitute_with_typepath(map_string)
+/obj/machinery/camera/autoname/deconstructed/substitute_with_typepath()
 	if(camera_construction_state != CAMERA_STATE_FINISHED)
-		return FALSE
+		return type
 
 	var/cache_key = "[type]-[dir]"
-	var/replacement_type = /obj/machinery/camera/autoname/directional
 	if(isnull(GLOB.map_export_typepath_cache[cache_key]))
+		var/replacement_type = /obj/machinery/camera/autoname/directional
 		var/directional = ""
 		switch(dir)
 			if(NORTH)
@@ -135,21 +135,14 @@
 		if(ispath(typepath))
 			GLOB.map_export_typepath_cache[cache_key] = typepath
 		else
-			GLOB.map_export_typepath_cache[cache_key] = FALSE
 			stack_trace("Failed to convert [src] to typepath: [full_path]")
+			return type
 
-	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		var/obj/machinery/camera/autoname/directional/typepath = cached_typepath
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, network, network)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, camera_upgrade_bitflags, camera_upgrade_bitflags)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, camera_enabled, camera_enabled)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, panel_open, panel_open)
+	return GLOB.map_export_typepath_cache[cache_key]
 
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
-
-	return cached_typepath
+/obj/machinery/camera/autoname/deconstructed/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, panel_open)
 
 /obj/machinery/button/get_save_vars()
 	. = ..()
@@ -341,9 +334,16 @@
 
 	return ..()
 
+/obj/machinery/brm/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, toggled_on)
+
+/obj/machinery/bouldertech/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, points_held)
+
 /obj/machinery/bouldertech/get_custom_save_vars(save_flags)
 	. = ..()
-
 	if(QDELETED(silo_materials.silo))
 		.["local_container"] = SSmaterials.to_list(silo_materials.mat_container)
 
@@ -357,7 +357,6 @@
 			attributes -= attribute
 
 			break
-
 	return ..()
 
 /obj/machinery/mineral/ore_redemption/get_custom_save_vars(save_flags)
@@ -485,7 +484,6 @@
 		if(attribute == "contents")
 			var/obj/item/circuitboard/machine/vendor/board = locate() in resolved_value
 			board.set_type(type)
-			..()
 
 			for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
 				for(var/obj/item/thing as anything in resolved_value)

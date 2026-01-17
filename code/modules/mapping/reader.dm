@@ -930,6 +930,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	var/list/members = model[1]
 	var/list/members_attributes = model[2]
 	var/index = members.len
+	var/world_save = CONFIG_GET(flag/persistent_save_enabled)
 
 	// We use static lists here because it's cheaper then passing them around
 	var/static/list/default_list = GLOB.map_model_default
@@ -993,6 +994,8 @@ GLOBAL_LIST_EMPTY(map_model_default)
 				for(var/ref_attribute in retained_ref_attributes)
 					final_member_attributes -= ref_attribute
 				final_member_attributes -= REF_ATTRIBUTES
+				if(!world_save) //this will stop registering atoms to the world save loader
+					has_ref_attributes = FALSE
 
 			world.preloader_setup(final_member_attributes , members[index])
 
@@ -1023,7 +1026,8 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			instance = create_atom(members[index], crds) // We make the assertion that only /atom s will be in this portion of the code. if that isn't true, this will fail
 			if(obj_ref_id)
 				atom_refs[obj_ref_id] = instance
-			SSworld_save.world_save_loaders[instance] = list()
+			if(world_save) //don't init world loaders if we don't want to
+				SSworld_save.world_save_loaders[instance] = list()
 
 		//if we have ref attributes then form the map to decode it later
 		if(has_ref_attributes)
@@ -1077,9 +1081,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 							if(islist(value))
 								data += list(value)
 				else if(istext(resolved_value))
-					resolved_value = atom_refs[resolved_value]
-					if(isnull(resolved_value))
-						continue
+					var/atom/movable/movable_value = atom_refs[resolved_value]
+					if(ismovable(movable_value) && !QDELETED(movable_value))
+						resolved_value = movable_value
 				resolved_members[attribute] = resolved_value
 			if(resolved_members.len)
 				SSworld_save.world_save_loaders[instance] = resolved_members

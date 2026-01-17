@@ -48,8 +48,8 @@
 				english_right += chem::name
 
 			attributes -= attribute
-			break
 
+			break
 
 	return ..()
 
@@ -67,7 +67,6 @@
 	.["product_type"] = packaging_type
 
 /obj/machinery/plumbing/pill_press/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "product_type")
 			packaging_type = resolved_value
@@ -82,9 +81,13 @@
 			else
 				packaging_category = "Bottles"
 
+			attributes -= attribute
+
 		else if(attribute == "contents")
-			for(var/obj/item/reagent_containers/product in contents)
+			for(var/obj/item/reagent_containers/product in resolved_value)
 				stored_products += product
+
+	return ..()
 
 /obj/machinery/plumbing/buffer/get_save_vars()
 	. = ..()
@@ -104,6 +107,7 @@
 			attempt_connect()
 
 			attributes -= attribute
+
 			break
 
 	return ..()
@@ -144,9 +148,12 @@
 		.["target_coords"] = list(target_turf.x, target_turf.y, target_turf.z)
 
 /obj/machinery/plumbing/sender/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "target_coords")
 			target = locate() in TURF_FROM_COORDS_LIST(resolved_value)
 
+			attribute -= attribute
+
 			break
+
+	return ..()

@@ -12,14 +12,16 @@
 		.[NAMEOF(src, start_with_cell)] = FALSE
 		.[NAMEOF(src, cell)] = cell
 
-
 /obj/machinery/light/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "on")
 			set_on(resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/structure/light_construct/get_save_vars(save_flags=ALL)
 	. = ..()

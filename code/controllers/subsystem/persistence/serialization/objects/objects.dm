@@ -1,7 +1,8 @@
-/obj/get_save_vars()
+/obj/get_save_vars(save_flags=ALL)
 	. = ..()
 	. += NAMEOF(src, req_access)
 	. += NAMEOF(src, id_tag)
+	. += NAMEOF(src, obj_flags)
 
 /obj/effect/decal/cleanable/blood/footprints/get_save_vars(save_flags)
 	. = ..()
@@ -44,7 +45,7 @@
 			registered_account.mining_points = data[3]
 			registered_account.bitrunning_points = data[4]
 
-			attributes -= data
+			attributes -= attribute
 
 			break
 
@@ -66,21 +67,23 @@
 	for(var/datum/computer_file/program in stored_files)
 		if(program.type in starting_programs)
 			continue
-		stored_files["stored_files"] += "[program.type]"
-	if(length(stored_files["stored_files"]))
+		stored_files += program.type
+	if(length(stored_files))
 		.["stored_files"] += stored_files
 
 /obj/item/modular_computer/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "stored_files")
-			for(var/program_type in resolved_value)
-				var/datum/computer_file/program = text2path(program_type)
-				program = new program
+			for(var/datum/computer_file/program in resolved_value)
+				program = new
 				if(!store_file(program))
 					qdel(program)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/item/construction/get_save_vars(save_flags)
 	. = ..()
@@ -140,24 +143,25 @@
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "core")
 			if(!QDELETED(core))
-				core.uninstall()
+				core.mod = null
 				qdel(core)
 
 			for(var/obj/item/mod/module/installed in contents)
-				uninstall(installed)
+				installed.mod = null
 				qdel(installed)
 
 			var/obj/item/mod/core/resolved_core = resolved_value
 			resolved_core.install(src)
+
 			attributes -= attribute
 
 		else if(attribute == "modules")
 			for(var/obj/item/mod/module/mod in resolved_value)
 				install(mod)
+
 			attributes -= attribute
 
 	return ..()
-
 
 /obj/item/gun/energy/get_save_vars(save_flags)
 	. = ..()
@@ -179,9 +183,10 @@
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "modkits")
 			for(var/obj/item/borg/upgrade/modkit/mod in resolved_value)
-				mod.install(src, usr)
+				mod.forceMove(src)
 
-			attribute -= attribute
+			attributes -= attribute
+
 			break
 
 	return ..()
@@ -192,21 +197,20 @@
 		.["air"] = air_contents.to_string()
 
 /obj/item/tank/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "air")
 			air_contents.merge(SSair.parse_gas_string(resolved_value))
 
+			attributes -= attribute
+
 			break
 
+	return ..()
+
 /obj/item/transfer_valve/get_save_vars(save_flags)
-	. = ..()
-	if(!QDELETED(tank_one))
-		. += NAMEOF(src, tank_one)
-	if(!QDELETED(tank_two))
-		. += NAMEOF(src, tank_two)
-	if(!QDELETED(attached_device))
-		. += NAMEOF(src, attached_device)
+	. += NAMEOF(src, tank_one)
+	. += NAMEOF(src, tank_two)
+	. += NAMEOF(src, attached_device)
 
 /obj/item/disk/tech_disk/get_custom_save_vars(save_flags)
 	. = ..()
@@ -227,32 +231,43 @@
 		.["hidden_nodes"] = stored_research.hidden_nodes
 
 /obj/item/disk/tech_disk/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "researched_nodes")
 			stored_research.researched_nodes.Cut()
 
 			stored_research.researched_nodes += resolved_value
 
+			attributes -= attribute
+
 		else if(attribute == "visible_nodes")
 			stored_research.visible_nodes.Cut()
 
 			stored_research.visible_nodes += resolved_value
+
+			attributes -= attribute
 
 		else if(attribute == "available_nodes")
 			stored_research.available_nodes.Cut()
 
 			stored_research.available_nodes += resolved_value
 
+			attributes -= attribute
+
 		else if(attribute == "researched_designs")
 			stored_research.researched_designs.Cut()
 
 			stored_research.researched_designs += resolved_value
 
+			attributes -= attribute
+
 		else if(attribute == "hidden_nodes")
 			stored_research.hidden_nodes.Cut()
 
 			stored_research.hidden_nodes += resolved_value
+
+			attributes -= attribute
+
+	return ..()
 
 /obj/item/assembly/control/get_save_vars(save_flags)
 	. = ..()
@@ -269,7 +284,6 @@
 	.["signs"] = turf_data
 
 /obj/item/holosign_creator/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "signs")
 			for(var/text_loc in resolved_value)
@@ -280,7 +294,11 @@
 				hologram.projector = src
 				LAZYADD(signs, hologram)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/item/boulder/get_save_vars(save_flags)
 	. = ..()
@@ -288,12 +306,9 @@
 
 /obj/item/vending_refill/get_save_vars(save_flags)
 	. = ..()
-	if(products)
-		. += NAMEOF(src, products)
-	if(contraband)
-		. += NAMEOF(src, contraband)
-	if(premium)
-		. += NAMEOF(src, premium)
+	. += NAMEOF(src, products)
+	. += NAMEOF(src, contraband)
+	. += NAMEOF(src, premium)
 
 /obj/item/vending_refill/custom/get_custom_save_vars(save_flags)
 	. = ..()

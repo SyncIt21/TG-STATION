@@ -163,11 +163,12 @@
 							continue
 						if(thing.flags_1 & HOLOGRAM_1)
 							continue
-						if((thing in pull_from.contents) && is_multi_tile_object(obj_thing) && (thing.loc != pull_from))
-							continue
-						if(OBJECT_LIMIT_EXCEEDED)
-							continue
-						INCREMENT_OBJ_COUNT()
+						if(thing in pull_from)
+							if(is_multi_tile_object(obj_thing) && (thing.loc != pull_from))
+								continue
+							if(OBJECT_LIMIT_EXCEEDED)
+								continue
+							INCREMENT_OBJ_COUNT()
 					//====SAVING MOBS====
 					else
 						if(!isliving(thing))
@@ -176,17 +177,14 @@
 							continue
 						if(!(save_flags & SAVE_MOBS))
 							continue
-						if(MOB_LIMIT_EXCEEDED)
-							continue
-						INCREMENT_MOB_COUNT()
-
-					// if a typepath substitute was performed we don't need to save original object data
-					if(thing.substitute_with_typepath(current_header))
-						continue
+						if(thing in pull_from)
+							if(MOB_LIMIT_EXCEEDED)
+								continue
+							INCREMENT_MOB_COUNT()
 
 					//generate metadata
 					var/list/local_refs = list()
-					TGM_MAP_BLOCK(current_header, thing.type, generate_tgm_metadata(thing, local_refs, global_refs, write_refs, save_flags))
+					TGM_MAP_BLOCK(current_header, thing.substitute_with_typepath(), generate_tgm_metadata(thing, local_refs, global_refs, write_refs, save_flags))
 
 					//save any object references on the object
 					for(var/atom_id in local_refs)
@@ -224,6 +222,7 @@
 					header_data[textiftied_header] = key
 				contents += "[key]\n"
 			contents += "\"}"
+
 	GLOB.map_export_saved_pipelines.Cut()
 
 	return "//[DMM2TGM_MESSAGE]\n[header.Join()][contents.Join()]"

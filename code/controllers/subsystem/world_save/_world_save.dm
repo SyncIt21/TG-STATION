@@ -40,7 +40,6 @@ SUBSYSTEM_DEF(world_save)
 	if(world_save_loaders.len)
 		if(CONFIG_GET(flag/persistent_save_enabled))
 			LoadAtoms()
-			testing("Persistent initialized [SSatoms.world_save_loaders.len] atoms")
 
 	return SS_INIT_SUCCESS
 

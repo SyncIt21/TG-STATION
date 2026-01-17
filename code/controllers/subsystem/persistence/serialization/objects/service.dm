@@ -22,9 +22,9 @@ GLOBAL_LIST_INIT(saveable_paper_container_whitelist, typecacheof(list(
 	.[NAMEOF(src, default_raw_text)] = get_raw_text()
 
 // seeds are easily spammable
-/obj/item/seeds/get_save_vars(save_flags=ALL)
+/obj/item/seeds/is_saveable(turf/current_loc, list/obj_blacklist)
 	return FALSE
 
 // grown fruit is also spammable
-/obj/item/food/grown/get_save_vars(save_flags=ALL)
+/obj/item/food/grown/is_saveable(turf/current_loc, list/obj_blacklist)
 	return FALSE

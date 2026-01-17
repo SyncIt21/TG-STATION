@@ -1,4 +1,5 @@
-ADMIN_VERB(map_template_load, R_DEBUG, "Map Template - Place", "Place a map template at your current location.", ADMIN_CATEGORY_DEBUG)
+ADMIN_VERB_VISIBILITY(map_template_load, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG)
+ADMIN_VERB(map_template_load, R_DEBUG, "Map Template - Place", "Place a map template at your current location.", ADMIN_CATEGORY_MAPPING)
 	var/datum/map_template/template
 	var/map = tgui_input_list(user, "Choose a Map Template to place at your CURRENT LOCATION","Place Map Template", sort_list(SSmapping.map_templates))
 	if(!map)
@@ -38,7 +39,8 @@ ADMIN_VERB(map_template_load, R_DEBUG, "Map Template - Place", "Place a map temp
 			to_chat(user, "Failed to place map", confidential = TRUE)
 	user.images -= preview
 
-ADMIN_VERB(map_template_upload, R_DEBUG, "Map Template - Upload", "Upload a map template to the server.", ADMIN_CATEGORY_DEBUG)
+ADMIN_VERB_VISIBILITY(map_template_upload, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG)
+ADMIN_VERB(map_template_upload, R_DEBUG, "Map Template - Upload", "Upload a map template to the server.", ADMIN_CATEGORY_MAPPING)
 	var/map = input(user, "Choose a Map Template to upload to template storage","Upload Map Template") as null|file
 	if(!map)
 		return

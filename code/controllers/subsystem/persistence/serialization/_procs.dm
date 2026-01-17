@@ -25,17 +25,6 @@
 	. = ..()
 	. += NAMEOF(src, anchored)
 
-/obj/get_save_vars(save_flags=ALL)
-	. = ..()
-	. += NAMEOF(src, req_access)
-	. += NAMEOF(src, id_tag)
-	. += NAMEOF(src, obj_flags)
-
-/obj/item/get_custom_save_vars(save_flags)
-	. = ..()
-	if(contents.len && atom_storage)
-		.[NAMEOF(src, contents)] = contents
-
 /**
  * Overrides the variables of an object with a custom value when it is serialized.
  *
@@ -53,7 +42,7 @@
 	if(uses_integrity && (atom_integrity != max_integrity))
 		.[NAMEOF(src, atom_integrity)] = atom_integrity
 
-	if(!QDELETED(reagents))
+	if(!QDELETED(reagents) && reagents.total_volume)
 		var/list/reagent_list = list(
 			"max_volume" = reagents.maximum_volume,
 			"flags" =  reagents.flags,
@@ -62,6 +51,9 @@
 		for(var/datum/reagent/reg as anything in reagents.reagent_list)
 			reagent_list[reg.type] = "[reg.volume]/[reg.ph]/[reg.purity]"
 		.["reagents"] = reagent_list
+
+	if(HAS_TRAIT(src, TRAIT_UNDERTILE) && !HAS_TRAIT(src, TRAIT_UNDERFLOOR))
+		.["reveal"] = TRUE
 
 /**
  * Similar to [LateInitialize], executes code necessary for atoms loaded from persistence that require extra setup.
@@ -98,6 +90,9 @@
 					added_purity = text2num(reg_data[2]),
 					added_ph = text2num(reg_data[3])
 				)
+
+		else if(attribute == "reveal")
+			SEND_SIGNAL(src, COMSIG_OBJ_HIDE, UNDERFLOOR_INTERACTABLE)
 
 		else
 			vars[attribute] = resolved_value
@@ -161,21 +156,6 @@
 
 	return ..()
 
-/**
- * Check if an atom type has a substitute type for map export serialization.
- *
- * Substitution compacts map data by replacing the object with a typepath, which can improve
- * serialization speed. Any variables or data on the old object will not transfer over to the substitution.
- *
- * Examples:
- * - ORIGINAL /obj/machinery/atmospherics/pipe/smart/simple {color="#FF0000", hide=TRUE, pipe_layer=4}
- * - SUBSTITUTE /obj/machinery/atmospherics/pipe/smart/manifold4w/scrubber/hidden/layer4
- * - ORIGINAL /obj/machinery/light/built {icon_state="tube", status=LIGHT_OK}
- * - SUBSTITUTE /obj/machinery/light
- * - ORIGINAL /obj/machinery/atmospherics/components/unary/vent_scrubber {on=TRUE, layer=2}
- * - SUBSTITUTE /obj/machinery/atmospherics/components/unary/vent_scrubber/on/layer2
- *
- * Returns: The typepath for the substitution if possible or FALSE
- */
-/atom/proc/substitute_with_typepath(map_string)
-	return FALSE
+///Returns The typepath for map export serialization.
+/atom/proc/substitute_with_typepath()
+	return type

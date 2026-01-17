@@ -42,7 +42,7 @@
 			else
 				air_temporary = air_mixture
 
-/obj/machinery/atmospherics/pipe/smart/substitute_with_typepath(map_string)
+/obj/machinery/atmospherics/pipe/smart/substitute_with_typepath()
 	var/base_type = /obj/machinery/atmospherics/pipe/smart/manifold4w
 	var/cache_key = "[base_type]-[pipe_color]-[hide]-[piping_layer]"
 	if(isnull(GLOB.map_export_typepath_cache[cache_key]))
@@ -87,16 +87,10 @@
 		if(ispath(typepath))
 			GLOB.map_export_typepath_cache[cache_key] = typepath
 		else
-			GLOB.map_export_typepath_cache[cache_key] = FALSE
 			stack_trace("Failed to convert pipe to typepath: [full_path]")
+			return type
 
-	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		var/obj/machinery/atmospherics/pipe/smart/manifold4w/typepath = cached_typepath
-		// all relevant variables are in the typepath string
-		TGM_MAP_BLOCK(map_string, typepath, null)
-
-	return cached_typepath
+	return GLOB.map_export_typepath_cache[cache_key]
 
 // these spawn underneath cryo machines and will duplicate after every save
 /obj/machinery/atmospherics/components/unary/is_saveable(turf/current_loc, list/obj_blacklist)
@@ -109,7 +103,7 @@
 	. = ..()
 	. += NAMEOF(src, welded)
 
-/obj/machinery/atmospherics/components/unary/vent_pump/substitute_with_typepath(map_string)
+/obj/machinery/atmospherics/components/unary/vent_pump/substitute_with_typepath()
 	var/base_type
 	if(istype(src, /obj/machinery/atmospherics/components/unary/vent_pump/high_volume))
 		base_type = /obj/machinery/atmospherics/components/unary/vent_pump/high_volume
@@ -130,24 +124,10 @@
 		if(ispath(typepath))
 			GLOB.map_export_typepath_cache[cache_key] = typepath
 		else
-			GLOB.map_export_typepath_cache[cache_key] = FALSE
 			stack_trace("Failed to convert vent scrubber to typepath: [full_path]")
+			return type
 
-	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		var/obj/machinery/atmospherics/components/unary/vent_pump/typepath = cached_typepath
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, dir, dir)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, welded, welded)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, pump_direction, pump_direction)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, pressure_checks, pressure_checks)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, internal_pressure_bound, internal_pressure_bound)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, external_pressure_bound, external_pressure_bound)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, fan_overclocked, fan_overclocked)
-
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
-
-	return cached_typepath
+	return GLOB.map_export_typepath_cache[cache_key]
 
 /obj/machinery/atmospherics/components/unary/vent_pump/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -157,19 +137,7 @@
 	. += NAMEOF(src, external_pressure_bound)
 	. += NAMEOF(src, fan_overclocked)
 
-
-/obj/machinery/atmospherics/components/unary/vent_scrubber/get_save_vars(save_flags=ALL)
-	. = ..()
-	. += NAMEOF(src, scrubbing)
-	. += NAMEOF(src, filter_types)
-	. += NAMEOF(src, widenet)
-
-/obj/machinery/atmospherics/components/unary/vent_scrubber/get_custom_save_vars(save_flags)
-	. = ..()
-	if(filter_types.len)
-		.["filters"] = filter_types
-
-/obj/machinery/atmospherics/components/unary/vent_scrubber/substitute_with_typepath(map_string)
+/obj/machinery/atmospherics/components/unary/vent_scrubber/substitute_with_typepath()
 	var/base_type = /obj/machinery/atmospherics/components/unary/vent_scrubber
 	var/cache_key = "[base_type]-[on]-[piping_layer]"
 	if(isnull(GLOB.map_export_typepath_cache[cache_key]))
@@ -185,22 +153,21 @@
 		if(ispath(typepath))
 			GLOB.map_export_typepath_cache[cache_key] = typepath
 		else
-			GLOB.map_export_typepath_cache[cache_key] = FALSE
 			stack_trace("Failed to convert vent scrubber to typepath: [full_path]")
+			return type
 
-	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		var/obj/machinery/atmospherics/components/unary/vent_scrubber/typepath = cached_typepath
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, dir, dir)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, welded, welded)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, scrubbing, scrubbing)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, filter_types, filter_types)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, widenet, widenet)
+	return GLOB.map_export_typepath_cache[cache_key]
 
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
+/obj/machinery/atmospherics/components/unary/vent_scrubber/get_save_vars(save_flags=ALL)
+	. = ..()
+	. += NAMEOF(src, scrubbing)
+	. += NAMEOF(src, filter_types)
+	. += NAMEOF(src, widenet)
 
-	return cached_typepath
+/obj/machinery/atmospherics/components/unary/vent_scrubber/get_custom_save_vars(save_flags)
+	. = ..()
+	if(filter_types.len)
+		.["filters"] = filter_types
 
 /obj/machinery/atmospherics/components/unary/vent_scrubber/PersistentInitialize(list/attributes)
 	. = ..()
@@ -257,14 +224,17 @@
 		.["airs"] += stored_airs
 
 /obj/machinery/atmospherics/components/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "airs")
 			for(var/gas in resolved_value)
 				var/list/gas_data = splittext(gas, "/")
 				airs[text2num(gas_data[2])].merge(SSair.parse_gas_string(gas_data[1]))
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/atmospherics/components/binary/crystallizer/get_save_vars(save_flags)
 	. = ..()
@@ -276,17 +246,21 @@
 	if(selected_recipe)
 		.["recipe"] = selected_recipe.id
 
-
 /obj/machinery/atmospherics/components/binary/crystallizer/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "internal")
 			internal.merge(SSair.parse_gas_string(resolved_value))
+
+			attributes -= attribute
 
 		else if(attribute == "recipe")
 			selected_recipe = GLOB.gas_recipe_meta[resolved_value]
 			update_parents() //prevent the machine from stopping because of the recipe change and the pipenet not updating
 			moles_calculations()
+
+			attributes -= attribute
+
+	return ..()
 
 /obj/item/pipe/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -443,17 +417,22 @@
 	)
 
 /obj/machinery/atmospherics/components/unary/hypertorus/core/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "power")
 			start_power = TRUE
 
 			update_use_power(ACTIVE_POWER_USE)
 
+			attributes -= attribute
+
 		else if(attribute == "fuel")
 			selected_fuel = GLOB.hfr_fuels_list[resolved_value]
 
+			attributes -= attribute
+
 		else if(attribute == "activate")
+			attributes -= attribute
+
 			if(!check_part_connectivity())
 				continue
 
@@ -468,3 +447,5 @@
 			linked_interface.connected_core = src
 			if(resolved_value[3])
 				activate(usr)
+
+	return ..()

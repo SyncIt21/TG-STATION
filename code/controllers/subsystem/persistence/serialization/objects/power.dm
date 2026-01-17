@@ -26,15 +26,17 @@
 		.["cable_coil"] = cable.amount
 
 /obj/item/rwd/PersistentInitialize(list/attributes)
-	. = ..()
-
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "cable_coil")
 			cable = new (src, resolved_value)
 
-			return
+			update_appearance()
 
-	update_appearance()
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/power/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -61,15 +63,20 @@
 		.[NAMEOF(src, cell)] = cell
 
 /obj/machinery/power/apc/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "cell")
 			cell = resolved_value
-
+			cell.forceMove(src)
 			update_appearance()
+
+			attributes -= attribute
 
 		else if(attribute == "lights")
 			addtimer(CALLBACK(src, PROC_REF(lights), resolved_value), 1 SECONDS)
+
+			attributes -= attribute
+
+	return ..()
 
 /obj/machinery/power/apc/proc/lights(list/lights)
 	if(lights[1])
@@ -97,12 +104,15 @@
 	.[NAMEOF(src, charge)] = charge
 
 /obj/item/stock_parts/power_store/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "charge")
-			charge = resolved_value
+			give(resolved_value)
 
-			return
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/power/port_gen/pacman/get_save_vars(save_flags=ALL)
 	. = ..()
@@ -193,22 +203,13 @@
 		.["absorbed_gases"] = absorbed_gasmix.to_string()
 
 /obj/machinery/power/supermatter_crystal/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "absorbed_gases")
 			absorbed_gasmix = SSair.parse_gas_string(resolved_value)
 
-			return
+			attributes -= attribute
 
-/obj/machinery/brm/get_save_vars(save_flags)
-	. = ..()
-	. += NAMEOF(src, toggled_on)
+			break
 
-/obj/machinery/bouldertech/get_save_vars(save_flags)
-	. = ..()
-	. += NAMEOF(src, points_held)
+	return ..()
 
-/obj/machinery/bouldertech/get_custom_save_vars(save_flags)
-	. = ..()
-	if(QDELETED(silo_materials.silo))
-		.["local_container"] = SSmaterials.to_list(silo_materials.mat_container)

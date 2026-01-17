@@ -26,7 +26,7 @@
 		return ELEMENT_INCOMPATIBLE
 
 	RegisterSignal(target, COMSIG_OBJ_HIDE, PROC_REF(hide))
-
+	ADD_TRAIT(target, TRAIT_UNDERTILE, INNATE_TRAIT)
 	src.invisibility_trait = invisibility_trait
 	src.invisibility_level = invisibility_level
 	src.tile_overlay = tile_overlay
@@ -107,5 +107,6 @@
 
 	hide(source, UNDERFLOOR_INTERACTABLE)
 	source.RemoveInvisibility(type)
+	REMOVE_TRAIT(source, TRAIT_UNDERTILE, INNATE_TRAIT)
 
 #undef ALPHA_UNDERTILE

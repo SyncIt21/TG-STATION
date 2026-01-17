@@ -35,10 +35,8 @@
 	. = ..()
 	updatehealth()
 
-/mob/living/silicon/robot/substitute_with_typepath(map_string)
-	TGM_MAP_BLOCK(map_string, /obj/item/robot_suit/prebuilt, null)
+/mob/living/silicon/robot/substitute_with_typepath()
 	return /obj/item/robot_suit/prebuilt
 
-/mob/living/silicon/ai/substitute_with_typepath(map_string)
-	TGM_MAP_BLOCK(map_string, /obj/structure/ai_core/latejoin_inactive, null)
+/mob/living/silicon/ai/substitute_with_typepath()
 	return /obj/structure/ai_core/latejoin_inactive
