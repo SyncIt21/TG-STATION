@@ -111,6 +111,9 @@
 	/// If we are currently loading this map
 	var/loading = FALSE
 
+	///Are we a persistence loaded file path
+	var/is_persistence = FALSE
+
 	#ifdef TESTING
 	var/turfsSkipped = 0
 	#endif
@@ -183,6 +186,7 @@
 	// Love ya :)
 	if(isfile(tfile))
 		original_path = "[tfile]"
+
 		tfile = file2text(tfile)
 	else if(isnull(tfile))
 		// create a new datum without loading a map
@@ -1009,6 +1013,8 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					instance = crds.load_on_top(members[index], CHANGETURF_DEFER_CHANGE | (no_changeturf ? CHANGETURF_SKIP : NONE))
 				else if(no_changeturf)
 					instance = create_atom(members[index], crds)//first preloader pass
+					if(world_save) //don't init world loaders if we don't want to
+						SSworld_save.world_save_loaders[instance] = list()
 				else
 					instance = crds.ChangeTurf(members[index], null, CHANGETURF_DEFER_CHANGE)
 

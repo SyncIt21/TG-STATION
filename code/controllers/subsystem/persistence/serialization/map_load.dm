@@ -33,6 +33,8 @@ ADMIN_VERB(map_template_load, R_DEBUG, "Map Template - Place", "Place a map temp
 					if(istype(P, /obj/docking_port/mobile))
 						template.post_load(P)
 						break
+			if(CONFIG_GET(flag/persistent_save_enabled))
+				SSworld_save.LoadAtoms()
 
 			message_admins(span_adminnotice("[key_name_admin(user)] has placed a map template ([template.name]) at [ADMIN_COORDJMP(T)]"))
 		else

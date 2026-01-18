@@ -114,10 +114,11 @@
 			LAZYADD(part, components)
 
 /obj/structure/frame/computer/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "board")
 			circuit = resolved_value
 			circuit.forceMove(src)
 			circuit_added(resolved_value)
 			break
+
+	return ..()

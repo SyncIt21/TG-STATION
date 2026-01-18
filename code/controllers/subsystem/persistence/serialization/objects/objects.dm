@@ -142,13 +142,7 @@
 /obj/item/mod/control/PersistentInitialize(list/attributes)
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "core")
-			if(!QDELETED(core))
-				core.mod = null
-				qdel(core)
-
-			for(var/obj/item/mod/module/installed in contents)
-				installed.mod = null
-				qdel(installed)
+			QDEL_NULL(core)
 
 			var/obj/item/mod/core/resolved_core = resolved_value
 			resolved_core.install(src)
@@ -156,6 +150,9 @@
 			attributes -= attribute
 
 		else if(attribute == "modules")
+			for(var/obj/item/mod/module/installed in contents)
+				qdel(installed)
+
 			for(var/obj/item/mod/module/mod in resolved_value)
 				install(mod)
 
@@ -165,10 +162,11 @@
 
 /obj/item/gun/energy/get_save_vars(save_flags)
 	. = ..()
-
-	cell_type = null
-	. += NAMEOF(src, cell_type)
 	. += NAMEOF(src, cell)
+
+/obj/item/gun/energy/get_custom_save_vars(save_flags)
+	. = ..()
+	.[NAMEOF(src, cell_type)] = null
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/get_custom_save_vars(save_flags)
 	. = ..()
@@ -303,6 +301,10 @@
 /obj/item/boulder/get_save_vars(save_flags)
 	. = ..()
 	. += NAMEOF(src, durability)
+
+/obj/item/circuitboard/machine/vendor/get_save_vars(save_flags)
+	. = ..()
+	. += NAMEOF(src, all_products_free)
 
 /obj/item/vending_refill/get_save_vars(save_flags)
 	. = ..()

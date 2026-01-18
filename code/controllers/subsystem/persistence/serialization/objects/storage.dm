@@ -56,10 +56,15 @@
 
 	update_appearance()
 
-
 /obj/item/mod/module/storage/PersistentInitialize(list/attributes)
-	atom_storage.set_locked(STORAGE_NOT_LOCKED)
+	for(var/attribute, resolved_value in attributes)
+		if(attribute == "contents")
+			addtimer(CALLBACK(src, PROC_REF(process_contents), resolved_value), 0.1 SECONDS) //delay till the modsuit has installed us first
 
-	. = ..()
+			attributes -= attribute
 
-	atom_storage.set_locked(STORAGE_FULLY_LOCKED)
+	return ..()
+
+/obj/item/mod/module/storage/proc/process_contents(list/stuff)
+	for(var/obj/item in stuff)
+		mod.atom_storage.attempt_insert(item, override = TRUE, messages = FALSE, force = STORAGE_FULLY_LOCKED)

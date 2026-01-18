@@ -113,10 +113,6 @@
 		affected_turf.air_update_turf(TRUE, TRUE)
 		affected_turf.levelupdate()
 
-	//Load all atoms with special attributes which only exists from a world save
-	if(CONFIG_GET(flag/persistent_save_enabled))
-		SSworld_save.LoadAtoms()
-
 /datum/map_template/proc/load_new_z(secret = FALSE)
 	var/x = round((world.maxx - width) * 0.5) + 1
 	var/y = round((world.maxy - height) * 0.5) + 1

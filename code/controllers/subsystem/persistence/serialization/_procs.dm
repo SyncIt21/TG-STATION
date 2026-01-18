@@ -4,6 +4,7 @@
  *
  * Always use NAMEOF(src, varname) for the keys to ensure compile-time checking.
  * Do NOT return variable values or custom data in this proc.
+ * Values that are atoms require parsing inside PersistentInitialize()
  *
  * Returns: Array list of variable names to be serialized
  */
@@ -26,15 +27,11 @@
 	. += NAMEOF(src, anchored)
 
 /**
- * Overrides the variables of an object with a custom value when it is serialized.
- *
- * Always use NAMEOF(src, varname) for the keys to ensure compile-time checking.
- * Examples:
- * - Saving a object reference as a savable id_tag
- * - Saving a calculated value
- *
- * Returns: Assoicated list of variables with custom values to be serialized
- */
+ * Returns a list of attributes whos values need special parsing. The rules of parsing are as follows
+ * * If the value is an atom or list then it requires special parsing inside PersistentInitialize()
+ * * If the value is not part of the objects member variables then it requires special parsing inside PersistentInitialize()
+ * * If none of the above are true then the value is resolved normally and can be accessed inside New()
+*/
 /atom/proc/get_custom_save_vars(save_flags=ALL)
 	SHOULD_CALL_PARENT(TRUE)
 
@@ -94,9 +91,6 @@
 		else if(attribute == "reveal")
 			SEND_SIGNAL(src, COMSIG_OBJ_HIDE, UNDERFLOOR_INTERACTABLE)
 
-		else
-			vars[attribute] = resolved_value
-
 /atom/movable/PersistentInitialize(list/attributes)
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "contents")
@@ -110,6 +104,7 @@
 					item.forceMove(src)
 
 			attributes -= attribute
+
 			continue
 
 		var/atom/data = resolved_value
@@ -123,7 +118,7 @@
 				move.forceMove(src)
 			attributes -= attribute
 
-	..()
+	return ..()
 
 /**
  * Check if an atom is savable for serilization during map export.

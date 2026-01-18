@@ -33,7 +33,6 @@
 		.["air"] = air_temporary.to_string()
 
 /obj/machinery/atmospherics/pipe/PersistentInitialize(list/attributes)
-	. = ..()
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "air")
 			var/datum/gas_mixture/air_mixture = SSair.parse_gas_string(resolved_value)
@@ -41,6 +40,12 @@
 				parent.set_air(air_mixture)
 			else
 				air_temporary = air_mixture
+
+			attributes -= attribute
+
+			break
+
+	return ..()
 
 /obj/machinery/atmospherics/pipe/smart/substitute_with_typepath()
 	var/base_type = /obj/machinery/atmospherics/pipe/smart/manifold4w
@@ -170,8 +175,6 @@
 		.["filters"] = filter_types
 
 /obj/machinery/atmospherics/components/unary/vent_scrubber/PersistentInitialize(list/attributes)
-	. = ..()
-
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "filters")
 			filter_types.Cut()
@@ -179,10 +182,14 @@
 				filter_types += gas_type
 			atmos_conditions_changed()
 
+			attributes -= attribute
+
 			break
 
 	if(widenet)
 		set_widenet(widenet)
+
+	return ..()
 
 /obj/machinery/atmospherics/components/unary/thermomachine/get_save_vars(save_flags=ALL)
 	. = ..()

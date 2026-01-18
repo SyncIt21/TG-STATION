@@ -357,6 +357,7 @@
 			attributes -= attribute
 
 			break
+
 	return ..()
 
 /obj/machinery/mineral/ore_redemption/get_custom_save_vars(save_flags)
@@ -471,9 +472,12 @@
 	. = ..()
 	. += NAMEOF(src, credits_contained)
 	. += NAMEOF(src, all_products_free)
-	on_deconstruction()
 
-/obj/machinery/vending/custom/get_save_vars(save_flags)
+/obj/machinery/vending/get_custom_save_vars(save_flags)
+	on_deconstruction()
+	. = ..()
+
+/obj/machinery/vending/custom/get_custom_save_vars(save_flags)
 	var/temp = linked_account
 	linked_account = null
 	. = ..()
@@ -483,18 +487,19 @@
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "contents")
 			var/obj/item/circuitboard/machine/vendor/board = locate() in resolved_value
-			board.set_type(type)
 
-			for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
-				for(var/obj/item/thing as anything in resolved_value)
-					if(thing.type == record.product_path)
-						LAZYADD(record.returned_products, thing)
-						record.amount += 1
-						break
+			board.set_type(type)
 
 			break
 
-	return ..()
+	. = ..()
+
+	for(var/datum/data/vending_product/record in product_records + coin_records + hidden_records)
+		for(var/obj/item/thing in contents - component_parts)
+			if(thing.type == record.product_path)
+				LAZYADD(record.returned_products, thing)
+				record.amount += 1
+				break
 
 /obj/machinery/space_heater/PersistentInitialize(list/attributes)
 	. = ..()

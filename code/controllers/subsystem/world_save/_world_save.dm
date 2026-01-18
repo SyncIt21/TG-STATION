@@ -34,12 +34,15 @@ SUBSYSTEM_DEF(world_save)
 	var/list/world_save_loaders = list()
 
 /datum/controller/subsystem/world_save/Initialize()
-	if(CONFIG_GET(number/persistent_autosave_period) > 0 && CONFIG_GET(flag/persistent_save_enabled))
-		wait = CONFIG_GET(number/persistent_autosave_period) HOURS
+	if(CONFIG_GET(flag/persistent_save_enabled))
+		if(CONFIG_GET(number/persistent_autosave_period) > 0)
+			wait = CONFIG_GET(number/persistent_autosave_period) HOURS
 
-	if(world_save_loaders.len)
-		if(CONFIG_GET(flag/persistent_save_enabled))
-			LoadAtoms()
+		for(var/trait in map_configs_cache)
+			if(length(map_configs_cache[trait]))
+				LoadAtoms()
+				break
+	world_save_loaders.Cut()
 
 	return SS_INIT_SUCCESS
 

@@ -51,8 +51,11 @@
 	. += NAMEOF(src, equipment)
 	. += NAMEOF(src, environ)
 	. += NAMEOF(src, cell_type)
+
+/obj/machinery/power/apc/get_custom_save_vars(save_flags)
+	. = ..()
 	if(!auto_name)
-		. += NAMEOF(src, name)
+		.[NAMEOF(src, name)] = name
 
 /obj/machinery/power/apc/get_custom_save_vars(save_flags=ALL)
 	. = ..()
