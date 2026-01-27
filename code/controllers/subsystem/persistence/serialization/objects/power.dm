@@ -100,11 +100,8 @@
 
 /obj/item/stock_parts/power_store/get_save_vars(save_flags=ALL)
 	. = ..()
-	. += NAMEOF(src, rigged)
-
-/obj/item/stock_parts/power_store/get_custom_save_vars(save_flags)
-	. = ..()
-	.[NAMEOF(src, charge)] = charge
+	. += NAMEOF(src, corrupted)
+	. += NAMEOF(src, charge)
 
 /obj/item/stock_parts/power_store/PersistentInitialize(list/attributes)
 	for(var/attribute, resolved_value in attributes)
