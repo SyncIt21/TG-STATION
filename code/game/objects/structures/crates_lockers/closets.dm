@@ -1126,7 +1126,7 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 
 /obj/structure/closet/proc/togglelock(mob/living/user, silent)
 	if(!secure || broken)
-		return
+		return FALSE
 
 	if(locked) //only apply checks while unlocking else allow anyone to lock it
 		var/error_msg = ""
@@ -1138,8 +1138,7 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 				id_card = null
 				req_access = list()
 				req_one_access = null
-				togglelock(user, silent)
-				return
+				return togglelock(user, silent)
 			if(!can_unlock(user, user.get_idcard(), registered_id))
 				error_msg = "not your locker!"
 		else if(!can_unlock(user, user.get_idcard()))
@@ -1147,7 +1146,7 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 		if(error_msg)
 			if(!silent)
 				balloon_alert(user, error_msg)
-			return
+			return TRUE
 
 	if(iscarbon(user))
 		add_fingerprint(user)
@@ -1158,6 +1157,7 @@ GLOBAL_LIST_EMPTY(roundstart_station_closets)
 		span_notice("You [locked ? "locked" : "unlocked"] [src]."),
 	)
 	update_appearance()
+	return TRUE
 
 /// toggles the lock state of a closet
 /obj/structure/closet/proc/lock()
