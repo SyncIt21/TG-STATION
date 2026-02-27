@@ -403,9 +403,6 @@ The type path itself encodes all the information - no variables needed!
 			stack_trace("Failed to convert pipe to typepath: [full_path]")
 
 	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		// All relevant variables are encoded in the typepath string
-		TGM_MAP_BLOCK(map_string, typepath, null)
 
 	return cached_typepath
 ```
@@ -449,18 +446,6 @@ Sometimes you can substitute the type but still need to save some variables:
 			stack_trace("Failed to convert vent scrubber to typepath: [full_path]")
 
 	var/cached_typepath = GLOB.map_export_typepath_cache[cache_key]
-	if(cached_typepath)
-		var/obj/machinery/atmospherics/components/unary/vent_scrubber/typepath = cached_typepath
-		// These variables can't be encoded in the typepath, so save them separately
-		var/list/variables = list()
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, dir, dir)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, welded, welded)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, scrubbing, scrubbing)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, filter_types, filter_types)
-		TGM_ADD_TYPEPATH_VAR(variables, typepath, widenet, widenet)
-
-		TGM_MAP_BLOCK(map_string, typepath, generate_tgm_typepath_metadata(variables))
-
 	return cached_typepath
 ```
 

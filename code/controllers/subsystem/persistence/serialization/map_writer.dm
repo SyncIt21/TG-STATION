@@ -1,3 +1,48 @@
+/**
+ * Adds a TGM object to the map string with optional variables.
+ *
+ * Arguments:
+ * map_string: The current map string being assembled (will be modified in-place).
+ * typepath: The typepath to save
+ * variables_metadata: The variables that will be included on the typepath that must be formatted via generate_tgm_metadata()
+ */
+#define TGM_MAP_BLOCK(map_string, typepath, variables_metadata)\
+	if(length(map_string)) {\
+		map_string += ",\n";\
+	};\
+	map_string += "[typepath]";\
+	if(length(variables_metadata)) {\
+		map_string += "[variables_metadata]";\
+	};
+
+// Metrics tracking macros for map serialization
+
+/// Increment object counter (per turf)
+#define INCREMENT_OBJ_COUNT(...) \
+	do { \
+		GLOB.TGM_objs++; \
+		GLOB.TGM_total_objs++; \
+	} while (FALSE); \
+
+/// Increment mob counter (per turf)
+#define INCREMENT_MOB_COUNT(...) \
+	do { \
+		GLOB.TGM_mobs++; \
+		GLOB.TGM_total_mobs++; \
+	} while (FALSE); \
+
+/// Increment turf counter
+#define INCREMENT_TURF_COUNT (GLOB.TGM_total_turfs++)
+
+/// Increment area counter (should only be called once per unique area)
+#define INCREMENT_AREA_COUNT (GLOB.TGM_total_areas++)
+
+/// Check if object limit is exceeded
+#define OBJECT_LIMIT_EXCEEDED (GLOB.TGM_objs >= CONFIG_GET(number/persistent_max_object_limit_per_turf))
+
+/// Check if mob limit is exceeded
+#define MOB_LIMIT_EXCEEDED (GLOB.TGM_mobs >= CONFIG_GET(number/persistent_max_mob_limit_per_turf))
+
 /**Map exporter
 * Inputting a list of turfs into convert_map_to_tgm() will output a string
 * with the turfs and their objects / areas on said turf into the TGM mapping format
@@ -240,3 +285,8 @@
 		output += pull_from[calculated]
 	return output.Join()
 
+#undef TGM_MAP_BLOCK
+#undef INCREMENT_TURF_COUNT
+#undef INCREMENT_AREA_COUNT
+#undef OBJECT_LIMIT_EXCEEDED
+#undef MOB_LIMIT_EXCEEDED

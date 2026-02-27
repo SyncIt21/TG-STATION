@@ -1,3 +1,9 @@
+/// Generates a TGM string for an object's variables "{variables}"
+#define TGM_VARS_BLOCK(variables) ("{\n\t[variables]\n\t}")
+
+/// Generates a TGM string for a single variable assignment line "[variable] = [value]"
+#define TGM_VAR_LINE(variable, value) ("[variable] = [value]")
+
 GLOBAL_LIST_INIT(save_file_chars, list(
 	"a","b","c","d","e",
 	"f","g","h","i","j",
@@ -179,3 +185,6 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 		return
 
 	return TGM_VARS_BLOCK(data_to_add.Join(";\n\t"))
+
+#undef TGM_VARS_BLOCK
+#undef TGM_VAR_LINE
