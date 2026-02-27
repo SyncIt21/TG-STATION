@@ -96,16 +96,16 @@ GLOBAL_LIST_INIT(save_file_chars, list(
 			stack_trace("[custom_variable] is a protected variable name and cannot be exported")
 			continue
 
-		if(isatom(custom_value) || islist(custom_value) || !(custom_variable in object.vars))
-			custom_variable = "#[custom_variable]"
 		if(custom_variable == "contents")
 			custom_value = object.contents.Copy() //otherwise this would error in tgm_encode_list() with bad index cause its protected
 		var/text_value = tgm_encode(custom_value, local_refs, global_refs)
 		if(!custom_value)
 			continue
 
-		LAZYADD(data_to_add, TGM_VAR_LINE(custom_variable, text_value))
 		LAZYSET(custom_var_names, custom_variable, TRUE)
+		if(isatom(custom_value) || islist(custom_value) || !(custom_variable in object.vars))
+			custom_variable = "#[custom_variable]"
+		LAZYADD(data_to_add, TGM_VAR_LINE(custom_variable, text_value))
 
 	for(var/variable in vars_to_save)
 		// skip variables that use custom serialization

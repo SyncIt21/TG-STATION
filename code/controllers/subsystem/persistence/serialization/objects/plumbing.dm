@@ -2,9 +2,11 @@
 	for(var/attribute, resolved_value in attributes)
 		if(attribute == "reagents")
 			var/type = reagents.type
+
 			qdel(reagents)
+
 			reagents = type
-			attributes -= attribute
+
 			break
 
 	return ..()
