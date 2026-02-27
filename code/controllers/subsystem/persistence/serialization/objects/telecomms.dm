@@ -52,5 +52,3 @@
 	for(var/obj/machinery/telecomms/machine as anything in links)
 		autolinked_machines |= machine.id
 	.[NAMEOF(src, autolinkers)] = autolinked_machines
-
-
