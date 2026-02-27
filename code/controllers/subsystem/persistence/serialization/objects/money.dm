@@ -22,7 +22,7 @@
 /obj/machinery/computer/bank_machine/PersistentInitialize(list/attributes)
 	for(var/attribute, value in attributes)
 		if(attribute == "total_credits")
-			synced_bank_account.adjust_money(total_credits)
+			synced_bank_account.adjust_money(value)
 
 			attributes -= attribute
 
