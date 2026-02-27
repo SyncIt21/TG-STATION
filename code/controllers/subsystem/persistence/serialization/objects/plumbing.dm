@@ -12,10 +12,7 @@
 /obj/machinery/plumbing/acclimator/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, target_temperature)
-	. += NAMEOF(src, allowed_temperature_difference)
-	. += NAMEOF(src, enabled)
 	. += NAMEOF(src, acclimate_state)
-	. += NAMEOF(src, emptying)
 
 /obj/machinery/plumbing/bottler/get_save_vars()
 	. = ..()
@@ -35,27 +32,16 @@
 		. += NAMEOF(src, left)
 	if(right.len)
 		. += NAMEOF(src, right)
-	if(left.len || right.len)
-		.["refresh"] = 1
-
-/obj/machinery/plumbing/filter/PersistentInitialize(list/attributes)
-	for(var/attribute, resolved_value in attributes)
-		if(attribute == "refresh")
-			for(var/datum/reagent/chem as anything in left)
-				english_left += chem::name
-
-			for(var/datum/reagent/chem as anything in right)
-				english_right += chem::name
-
-			attributes -= attribute
-
-			break
-
-	return ..()
 
 /obj/machinery/plumbing/grinder_chemical/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, grinding)
+
+/obj/machinery/plumbing/buffer/PersistentInitialize(list/attributes)
+	if(anchored && !length(connections))
+		screwdriver_act()
+
+	return ..()
 
 /obj/machinery/plumbing/pill_press/get_save_vars()
 	. = ..()
@@ -94,24 +80,6 @@
 	. += NAMEOF(src, activation_volume)
 	. += NAMEOF(src, mode)
 
-/obj/machinery/plumbing/buffer/get_custom_save_vars(save_flags)
-	. = ..()
-	if(!QDELETED(buffer_net))
-		.["set"] = 1
-
-/obj/machinery/plumbing/buffer/PersistentInitialize(list/attributes)
-	for(var/attribute, resolved_value in attributes)
-		if(attribute == "set")
-			buffer_net = new()
-			LAZYADD(buffer_net.buffer_list, src)
-			attempt_connect()
-
-			attributes -= attribute
-
-			break
-
-	return ..()
-
 /obj/machinery/plumbing/reaction_chamber/get_save_vars()
 	. = ..()
 	. += NAMEOF(src, required_reagents)
@@ -131,10 +99,9 @@
 
 /obj/machinery/plumbing/splitter/get_save_vars()
 	. = ..()
-	. += NAMEOF(src, turn_straight)
 	. += NAMEOF(src, transfer_straight)
-	. += NAMEOF(src, transfer_side)
-	. += NAMEOF(src, max_transfer)
+	. += NAMEOF(src, transfer_left)
+	. += NAMEOF(src, transfer_right)
 
 /obj/machinery/plumbing/synthesizer/get_save_vars()
 	. = ..()
