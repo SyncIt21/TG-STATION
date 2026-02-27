@@ -11,7 +11,6 @@
 	. = ..()
 	update_appearance()
 
-
 /obj/machinery/computer/bank_machine/get_custom_save_vars(save_flags)
 	. = ..()
 
