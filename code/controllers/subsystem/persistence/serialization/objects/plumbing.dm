@@ -71,9 +71,6 @@
 
 			attributes -= attribute
 
-		else if(attribute == "contents")
-			for(var/obj/item/reagent_containers/product in resolved_value)
-				stored_products += product
 
 	return ..()
 

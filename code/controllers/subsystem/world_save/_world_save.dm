@@ -10,7 +10,7 @@ SUBSYSTEM_DEF(world_save)
 		/datum/controller/subsystem/machines,
 		/datum/controller/subsystem/shuttle,
 	)
-	flags = SS_BACKGROUND
+	ss_flags = SS_BACKGROUND
 	wait = INFINITY
 	runlevels = RUNLEVEL_GAME
 
@@ -62,9 +62,9 @@ SUBSYSTEM_DEF(world_save)
 
 /// Saves map z-levels in the world based on PERSISTENT_SAVE_ENABLED config options in config/persistence.txt
 /datum/controller/subsystem/world_save/proc/save_world(list/z_levels, silent=FALSE)
-	log_world("World map save initiated at [time_stamp()]")
+	log_world("World map save initiated at [round_timestamp()]")
 	if(!silent)
-		to_chat(world, span_boldannounce("World map save initiated at [time_stamp()]"))
+		to_chat(world, span_boldannounce("World map save initiated at [round_timestamp()]"))
 
 	save_persistent_maps(z_levels, silent)
 	prune_old_autosaves()
@@ -397,8 +397,8 @@ SUBSYSTEM_DEF(world_save)
 	current_save_y = 0
 	counted_areas = list()
 	if(!silent)
-		to_chat(world, span_boldannounce("World map save finished at [time_stamp()]"))
-	log_world("World map save finished at [time_stamp()]")
+		to_chat(world, span_boldannounce("World map save finished at [round_timestamp()]"))
+	log_world("World map save finished at [round_timestamp()]")
 
 /// Gets the current progress percentage for the active z-level
 /datum/controller/subsystem/world_save/proc/get_current_progress_percent()
