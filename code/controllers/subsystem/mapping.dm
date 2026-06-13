@@ -148,7 +148,7 @@ SUBSYSTEM_DEF(mapping)
 				continue
 
 			INIT_ANNOUNCE("Loading persistent z-level [persistent_map.map_name]...")
-			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, persistent_map.traits, null, height_autosetup = persistent_map.height_autosetup)
+			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, default_traits = persistent_map.traits, height_autosetup = persistent_map.height_autosetup)
 	else
 		// Create space ruin levels
 		while (space_levels_so_far < current_map.space_ruin_levels)
@@ -161,7 +161,7 @@ SUBSYSTEM_DEF(mapping)
 				continue
 
 			INIT_ANNOUNCE("Loading persistent z-level [persistent_map.map_name]...")
-			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, persistent_map.traits, null, height_autosetup = persistent_map.height_autosetup)
+			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, default_traits = persistent_map.traits, height_autosetup = persistent_map.height_autosetup)
 	else
 		// Create empty space levels
 		while (space_levels_so_far < current_map.space_empty_levels + current_map.space_ruin_levels)
@@ -174,10 +174,10 @@ SUBSYSTEM_DEF(mapping)
 				continue
 
 			INIT_ANNOUNCE("Loading persistent z-level [persistent_map.map_name]...")
-			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, persistent_map.traits, null, height_autosetup = persistent_map.height_autosetup)
+			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, default_traits = persistent_map.traits, height_autosetup = persistent_map.height_autosetup)
 
 	else if(current_map.wilderness_levels)
-		LoadGroup(FailedZs, "Wilderness Area", current_map.wilderness_directory, current_map.maps_to_spawn, default_traits = ZTRAITS_WILDS, height_autosetup = FALSE)
+		LoadGroup(FailedZs, "Wilderness Area", current_map.wilderness_directory, current_map.wilderness_maps_to_spawn, default_traits = current_map.wilderness_z_traits, height_autosetup = FALSE)
 
 		if(LAZYLEN(FailedZs))
 			CRASH("Ice wilds failed to load!")
