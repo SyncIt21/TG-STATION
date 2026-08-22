@@ -34,19 +34,3 @@
 
 /mob/living/silicon/ai/substitute_with_typepath()
 	return /obj/structure/ai_core/latejoin_inactive
-
-/mob/living/basic/parrot/get_custom_save_vars(save_flags)
-	. = ..()
-	if(!QDELETED(held_item))
-		.[NAMEOF(src, held_item)] = held_item
-
-/mob/living/basic/parrot/PersistentInitialize(list/attributes)
-	for(var/attribute, resolved_value in attributes)
-		if(attribute == NAMEOF(src, held_item))
-			put_in_inactive_hand(resolved_value, forced = TRUE)
-
-			attributes -= attribute
-
-			break
-
-	return ..()

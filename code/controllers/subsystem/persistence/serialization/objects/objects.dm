@@ -213,55 +213,14 @@
 /obj/item/disk/tech_disk/get_custom_save_vars(save_flags)
 	. = ..()
 
-	if(stored_research.researched_nodes.len)
-		.["researched_nodes"] = stored_research.researched_nodes
-
-	if(stored_research.visible_nodes.len)
-		.["visible_nodes"] = stored_research.visible_nodes
-
-	if(stored_research.available_nodes.len)
-		.["available_nodes"] = stored_research.available_nodes
-
-	if(stored_research.researched_designs.len)
-		.["researched_designs"] = stored_research.researched_designs
-
-	if(stored_research.hidden_nodes.len)
-		.["hidden_nodes"] = stored_research.hidden_nodes
+	.["stored_nodes"] = stored_nodes
 
 /obj/item/disk/tech_disk/PersistentInitialize(list/attributes)
 	for(var/attribute, resolved_value in attributes)
-		if(attribute == "researched_nodes")
-			stored_research.researched_nodes.Cut()
+		if(attribute == "stored_nodes")
+			stored_nodes.Cut()
 
-			stored_research.researched_nodes += resolved_value
-
-			attributes -= attribute
-
-		else if(attribute == "visible_nodes")
-			stored_research.visible_nodes.Cut()
-
-			stored_research.visible_nodes += resolved_value
-
-			attributes -= attribute
-
-		else if(attribute == "available_nodes")
-			stored_research.available_nodes.Cut()
-
-			stored_research.available_nodes += resolved_value
-
-			attributes -= attribute
-
-		else if(attribute == "researched_designs")
-			stored_research.researched_designs.Cut()
-
-			stored_research.researched_designs += resolved_value
-
-			attributes -= attribute
-
-		else if(attribute == "hidden_nodes")
-			stored_research.hidden_nodes.Cut()
-
-			stored_research.hidden_nodes += resolved_value
+			stored_nodes += resolved_value
 
 			attributes -= attribute
 
