@@ -26,6 +26,13 @@ SUBSYSTEM_DEF(minor_mapping)
 	// smuggler satchels spawn every round with a bunch of contraband which can lead to duplication over time
 	if(!CONFIG_GET(flag/persistent_save_enabled))
 		place_satchels(satchel_amount = 2)
+
+	var/weakpoint_spawns = 5
+	if(HAS_TRAIT(SSstation, STATION_TRAIT_SPAWN_WEAKPOINTS))
+		weakpoint_spawns = rand(6,12)
+
+	weakpoint_spawns += SSmapping.current_map.bonus_weakpoints //This will add 0 by default, or additional on large maps where it's included in the config.
+	place_weakpoints(weakpoint_spawns)
 	return SS_INIT_SUCCESS
 #endif
 

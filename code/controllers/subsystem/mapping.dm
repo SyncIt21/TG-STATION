@@ -140,7 +140,11 @@ SUBSYSTEM_DEF(mapping)
 	//if any of these fail, something has gone horribly, HORRIBLY, wrong
 	var/list/FailedZs = list()
 
-#ifndef LOWMEMORYMODE
+#ifndef SKIP_SPACE_LEVELS
+	// Create space ruin levels
+	while (space_levels_so_far < current_map.space_ruin_levels)
+		add_new_zlevel("Ruin Area [space_levels_so_far+1]", ZTRAITS_SPACE)
+		++space_levels_so_far
 
 	var/list/persistent_save_z_levels = CONFIG_GET(keyed_list/persistent_save_z_levels)
 
@@ -541,12 +545,11 @@ Used by the AI doomsday and the self-destruct nuke.
 		query_round_map_name.Execute()
 		qdel(query_round_map_name)
 
-#ifndef LOWMEMORYMODE
+#ifndef SKIP_LAVALAND
 	if(CONFIG_GET(flag/persistent_save_enabled) && persistent_save_z_levels[ZTRAIT_MINING] && SSworld_save.map_configs_cache?[ZTRAIT_MINING])
 		for(var/datum/map_config/persistent_map in SSworld_save.map_configs_cache[ZTRAIT_MINING])
 			if(IS_PERSISTENT_MAP_LOADED(persistent_map.map_file))
 				continue
-
 			INIT_ANNOUNCE("Loading persistent z-level [persistent_map.map_name]...")
 			LoadGroup(FailedZs, persistent_map.map_name, persistent_map.map_path, persistent_map.map_file, persistent_map.traits, null, height_autosetup = persistent_map.height_autosetup)
 	else
